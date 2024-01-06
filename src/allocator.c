@@ -137,15 +137,23 @@ void free(void*addr){
 			if(mb->next == NULL){
 				heap_tail = mb;
 			}
-			continue;
 		}
 		mb = mb->next;
+	}
+	if(to_free->next && to_free->next->is_free){
+		to_free->size += to_free->next->size + sizeof(mem_block);
+		to_free->next = to_free->next->next;
+		if(to_free->next == NULL){
+			heap_tail = to_free;
+		}
 	}
 	
 	pthread_mutex_unlock(&allocator_mutex);
 }
 
 void dump_memory_info(){
+	pthread_mutex_lock(&allocator_mutex);
+	
 	int counter = 1;
 	mem_block*mb;
 	printf("Memory info:\n");
@@ -160,4 +168,6 @@ void dump_memory_info(){
 		printf("\tfile:	\n");
 		printf("\tline: 	\n");
 	}
+	
+	pthread_mutex_unlock(&allocator_mutex);
 }
