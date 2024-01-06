@@ -22,7 +22,7 @@ void init(){
 }
 #endif
 
-void allign(size_t*size){
+void align(size_t*size){
 	size_t remainder = (*size) % sizeof(word_t);
 	if(remainder == 0){
 		return;

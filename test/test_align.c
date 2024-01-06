@@ -2,16 +2,17 @@
 
 #include"allocator.h"
 
-void test_allign(){
-	size_t size = 7;
-	allign(&size);
+void test_align(){
+	size_t size;
+	size = 7;
+	align(&size);
 	assert(size == 8);
 	
 	size = 8;
-	allign(&size);
+	align(&size);
 	assert(size == 8);
 	
 	size = 9;
-	allign(&size);
+	align(&size);
 	assert(size == 16);
 }

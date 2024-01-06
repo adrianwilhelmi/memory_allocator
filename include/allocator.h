@@ -14,16 +14,16 @@ typedef struct mem_chunk{
 	struct mem_chunk*next;
 } mem_chunk;
 
-extern memory_chunk*heap_head;
+extern mem_chunk*heap_head;
 extern pthread_mutex_t allocator_mutex;
 
 void initialize_allocator();
 //void*allocate(size_t bytes, __FILE__, __LINE__);
-void*allocate(size_t bytes)
+void*allocate(size_t bytes);
 void free(void*addr);
 void dump_memory();
 
 void free_all();
-align(size_t*size);
+void align(size_t*size);
 
 #endif
