@@ -12,6 +12,7 @@
 typedef struct mem_block{
 	size_t size;
 	bool is_free;
+	uintptr_t*start;
 	struct mem_block*next;
 } mem_block;
 

@@ -23,13 +23,22 @@ void test_align(){
 	printf("sizeof block: %d\n", (int)sizeof(struct block));
 	printf("proper size: %d\n", (int)proper_block_size);
 	
-	struct block*block1;
-	
-	assert(block1 == NULL);
-	
-	block1 = alloc(sizeof(struct block));
-	
+	struct block*block1 = alloc(sizeof(struct block));
 	assert(block1 != NULL);
+	
+	char*chr = alloc(sizeof(char));
+	assert(chr != NULL);
+	
+	int*pint = alloc(sizeof(int));
+	assert(pint != NULL);
+	
+	dump_memory_info();
+	
+	free(chr);
+	
+	dump_memory_info();
+	
+	chr = alloc(sizeof(char));
 	
 	dump_memory_info();
 }
