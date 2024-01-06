@@ -3,11 +3,11 @@ LFLAGS=-Iinclude
 
 all: allocator
 
-allocator:
+allocator: include/allocator.h src/allocator.c src/main.c
 	$(CC) $(CFLAGS) $(LFLAGS) -o allocator src/allocator.c src/main.c
 
-tests:
+tests: allocator test/test.c test/test_align.c
 	$(CC) $(CFLAGS) $(LFLAGS) -o tests test/test.c test/test_align.c src/allocator.c
 
 clean:
-    rm -f allocator tests *.o
+	rm -f allocator tests *.o

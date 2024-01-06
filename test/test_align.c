@@ -1,5 +1,6 @@
 #include<assert.h>
 
+#include"test.h"
 #include"allocator.h"
 
 void test_align(){
