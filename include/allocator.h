@@ -6,6 +6,8 @@
 #include<unistd.h>
 #include<pthread.h>
 
+//#define allocate(bytes) allocate(bytes, __FILE__, __LINE__);
+
 typedef struct mem_chunk{
 	size_t size;
 	bool is_free;
@@ -16,10 +18,12 @@ extern memory_chunk*heap_head;
 extern pthread_mutex_t allocator_mutex;
 
 void initialize_allocator();
-void*allocate(size_t bytes);
+//void*allocate(size_t bytes, __FILE__, __LINE__);
+void*allocate(size_t bytes)
 void free(void*addr);
-void free_all();
 void dump_memory();
+
+void free_all();
 align(size_t*size);
 
 #endif
