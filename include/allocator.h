@@ -6,11 +6,11 @@
 #include<unistd.h>
 #include<pthread.h>
 
-typedef struct memory_chunk{
+typedef struct mem_chunk{
 	size_t size;
 	bool is_free;
-	struct memory_chunk*next;
-} memory_chunk;
+	struct mem_chunk*next;
+} mem_chunk;
 
 extern memory_chunk*heap_head;
 extern pthread_mutex_t allocator_mutex;
@@ -20,5 +20,6 @@ void*allocate(size_t bytes);
 void free(void*addr);
 void free_all();
 void dump_memory();
+align(size_t*size);
 
 #endif
