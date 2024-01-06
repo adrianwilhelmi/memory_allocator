@@ -7,6 +7,7 @@
 pthread_mutex_t allocator_mutex;
 mem_block*heap_head = NULL;
 mem_block*heap_tail = NULL;
+bool was_initialized = 0;
 
 void initialize_allocator(){
 	if(pthread_mutex_init(&allocator_mutex, NULL) != 0){
@@ -14,6 +15,9 @@ void initialize_allocator(){
 		exit(EXIT_FAILURE);
 	}
 	
+//	atexit(free_all);
+	
+	was_initialized = 1;
 	printf("allocator initialized\n");
 }
 
@@ -54,6 +58,9 @@ static mem_block*get_new_memory_block(size_t size){
 	
 	//initialize global vars if its first allocated block
 	if(heap_head == NULL){
+		if(!was_initialized){
+			initialize_allocator();
+		}
 		heap_head = new_block;
 		heap_tail = new_block;
 	}
@@ -67,6 +74,8 @@ static mem_block*get_new_memory_block(size_t size){
 }
 
 void*allocate(size_t bytes, const char*file, int line){
+	//returns pointer to existing free memory block, or raises the program break if no free block is found
+	
 	if(bytes == 0){
 		return NULL;
 	}
@@ -118,7 +127,7 @@ void*allocate(size_t bytes, const char*file, int line){
 	return mb + 1;
 }
 
-void free(void*addr){
+void my_free(void*addr){
 	if(addr == NULL){
 		return;
 	}

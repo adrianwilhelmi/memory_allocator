@@ -7,7 +7,7 @@
 #include<pthread.h>
 #include<stdint.h>
 
-#define alloc(bytes) allocate(bytes, __FILE__, __LINE__)
+#define my_alloc(bytes) allocate(bytes, __FILE__, __LINE__)
 
 typedef struct mem_block{
 	size_t size;
