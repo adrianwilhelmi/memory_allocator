@@ -31,10 +31,6 @@ extern pthread_mutex_t allocator_mutex;
 void initialize_allocator();
 void*allocate(size_t bytes, const char*file, int line);
 void free(void*addr);
-void dump_memory();
-
-void free_all();
-size_t align(size_t size);
-static mem_block*get_new_memory_block(size_t size);
+void dump_memory_info();
 
 #endif

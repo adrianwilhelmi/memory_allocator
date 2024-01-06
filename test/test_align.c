@@ -4,41 +4,32 @@
 #include"allocator.h"
 
 void test_align(){
-	size_t size;
 	
-	size = 7;
-	size = align(size);
-	if(sizeof(size_t) == 8){
-		assert(size == 8);
-	}
-	else if(sizeof(size_t) == 4){
-		assert(size == 8);	
-	}
+	struct block{
+		int a;
+		int b;
+		char c;
+	};
 	
-	size = 8;
-	size = align(size);
-	if(sizeof(size_t) == 8){
-		assert(size == 8);
+	int proper_block_size;
+	if(sizeof(struct block)%sizeof(size_t) == 0){
+		proper_block_size = sizeof(struct block);
 	}
-	else if(sizeof(size_t) == 4){
-		assert(size == 8);	
-	}
-
-	size = 9;
-	size = align(size);
-	if(sizeof(size_t) == 8){
-		assert(size == 16);
-	}
-	else if(sizeof(size_t) == 4){
-		assert(size == 8);	
+	else{
+		proper_block_size = (sizeof(struct block) + sizeof(size_t)) / sizeof(size_t);
+		proper_block_size *= sizeof(size_t);
 	}
 	
-	size = 4;
-	size = align(size);
-	if(sizeof(size_t) == 8){
-		assert(size == 8);
-	}
-	else if(sizeof(size_t) == 4){
-		assert(size == 4);
-	}
+	printf("sizeof block: %d\n", (int)sizeof(struct block));
+	printf("proper size: %d\n", (int)proper_block_size);
+	
+	struct block*block1;
+	
+	assert(block1 == NULL);
+	
+	block1 = alloc(sizeof(struct block));
+	
+	assert(block1 != NULL);
+	
+	dump_memory_info();
 }
