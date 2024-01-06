@@ -5,6 +5,7 @@
 #include<stdbool.h>
 #include<unistd.h>
 #include<pthread.h>
+#include<stdint.h>
 
 //#define allocate(bytes) allocate(bytes, __FILE__, __LINE__);
 
