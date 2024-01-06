@@ -41,7 +41,7 @@ size_t align(size_t size){
 	return size + sizeof(size_t) - remainder;
 }
 
-mem_block*get_new_memory_block(size_t size){
+static mem_block*get_new_memory_block(size_t size){
 	//allocates size bytes of memory + memory for metadata
 	
 	//calculate total size
@@ -72,19 +72,39 @@ void*allocate(size_t bytes, const char*file, int line){
 	bytes = align(bytes);
 	
 	mem_block*mb;
+	
+	//search for free memory in previously allocated blocks
 	for(mb = heap_head; mb->next; mb = mb->next){
 		if(mb->is_free == true && mb->size >= bytes){
 			//return this, maybe chop it into 2 blocks
-			
-			mb->is_free = false;
+			if((mb->size > bytes + sizeof(mem_block) + sizeof(size_t))){
+				//enough memory to chop the block 2 into 2 smaller blocks
+				
+				size_t new_block_size = mb->size - bytes - sizeof(mem_block);
+				mb->is_free = false;
+				mb->size = bytes;
+				
+				mem_block*new_block = (mem_block*)((char*)mb + sizeof(mem_block) + bytes);
+				new_block->is_free = true;
+				new_block->size = new_block_size;
+				
+				new_block->next = mb->next;
+				mb->next = new_block;
+			}
+			else{
+				mb->is_free = false;
+			}
 			
 			pthread_mutex_unlock(&allocator_mutex);
 			
-			return mb + 1;
+			return (char*)mb + sizeof(mem_block);
 		}
 	}
 	
+	//get new memory block if no available memory found
 	mb = get_new_memory_block(bytes);
+	
+	pthread_mutex_unlock(&allocator_mutex);
 	
 	return mb +  1;
 }

@@ -35,6 +35,6 @@ void dump_memory();
 
 void free_all();
 size_t align(size_t size);
-mem_block*get_new_memory_block(size_t size);
+static mem_block*get_new_memory_block(size_t size);
 
 #endif
