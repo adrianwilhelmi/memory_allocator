@@ -10,6 +10,7 @@ typedef struct mem_block{
 	size_t size;
 	unsigned int magic_number;
 	int line;
+	unsigned int block_id;
 	bool is_free;
 } mem_block;
 

@@ -38,10 +38,9 @@ void report_stats(){
 	
 	printf("\nUNFREED BLOCKS\n");
 	printf("%-6s %-5s %-20s\n", "block", "line", "file");
-	int counter = 1;
 	for(mb = heap_head; mb; mb = mb->next){
 		if(!mb->is_free){
-			printf("%-6d %-5d %-20s\n", counter++, mb->line, mb->file);
+			printf("%-6d %-5d %-20s\n", mb->block_id, mb->line, mb->file);
 		}
 	}
 }

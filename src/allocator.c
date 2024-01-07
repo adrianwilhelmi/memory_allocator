@@ -12,6 +12,7 @@ bool was_initialized = 0;
 pthread_mutex_t allocator_mutex;
 allocator_stats alloc_stats;
 unsigned int magic_number = 0x6164726E;
+static unsigned int global_block_id = 0;
 
 void initialize_allocator(){
 	//initializes the mutex and sets up free_all as function to be called at exit
@@ -21,8 +22,9 @@ void initialize_allocator(){
 		exit(EXIT_FAILURE);
 	}
 	
+	//first report stats about unfreed blocks and then free them
+	atexit(free_all);
 	atexit(report_stats);
-//	atexit(free_all);
 	
 	was_initialized = 1;
 	printf("allocator initialized\n");
@@ -64,6 +66,7 @@ static mem_block*get_new_memory_block(size_t size){
 	new_block->is_free = false;
 	new_block->next = NULL;
 	new_block->magic_number = magic_number;
+	new_block->block_id = global_block_id++;
 	
 	//initialize global vars if its first allocated block
 	if(heap_head == NULL){
@@ -210,9 +213,8 @@ void dump_memory_info(){
 	
 	pthread_mutex_lock(&allocator_mutex);
 	
-	int counter = 1;
 	mem_block*mb;
-	printf("========MEMORY INFO========\n");
+//	printf("MEMORY INFO\n");
 	printf("%-12s %-12s %-22s %-22s %-20s %-12s", "block", "size", "start", "end", "line", "file");
 	printf("\n");
 	for(mb = heap_head; mb; mb = mb->next){
@@ -220,13 +222,14 @@ void dump_memory_info(){
 			continue;
 		}
 		printf("%-12d %-12zu %-22p %-22p %-20d %-12s\n",
-			counter++,
+			mb->block_id,
 			mb->size,
 			(void*)((uintptr_t)mb + sizeof(mem_block)),
 			(void*)((uintptr_t)mb + sizeof(mem_block) + mb->size),
 			mb->file ? mb->line : -1,
 			mb->file ? mb->file : "unknown file"
 			);
+			
 		/*
 		printf("%d\t%p\t%p\t%zu\t%s\t%d\n",
 			counter++,
@@ -247,6 +250,7 @@ void dump_memory_info(){
 		printf("\n");
 		*/
 	}
+	printf("\n");
 	
 	pthread_mutex_unlock(&allocator_mutex);
 }
