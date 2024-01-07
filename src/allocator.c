@@ -213,11 +213,21 @@ void dump_memory_info(){
 	int counter = 1;
 	mem_block*mb;
 	printf("========MEMORY INFO========\n");
+	printf("%-12s %-12s %-22s %-22s %-20s %-12s", "block", "size", "start", "end", "line", "file");
+	printf("\n");
 	for(mb = heap_head; mb; mb = mb->next){
 		if(mb->is_free){
 			continue;
 		}
-		printf("block\tstart\tend\tsize\tfile\tline\n");
+		printf("%-12d %-12zu %-22p %-22p %-20d %-12s\n",
+			counter++,
+			mb->size,
+			(void*)((uintptr_t)mb + sizeof(mem_block)),
+			(void*)((uintptr_t)mb + sizeof(mem_block) + mb->size),
+			mb->file ? mb->line : -1,
+			mb->file ? mb->file : "unknown file"
+			);
+		/*
 		printf("%d\t%p\t%p\t%zu\t%s\t%d\n",
 			counter++,
 			(void*)((uintptr_t)mb + sizeof(mem_block)),
@@ -226,7 +236,7 @@ void dump_memory_info(){
 			mb->file ? mb->file : "unknown file",
 			mb->file ? mb->line : -1
 			);
-		
+		*/
 		/*
 		printf("block %d:\n", counter++);
 		printf("start:	%p\n", (void*)((uintptr_t)mb + sizeof(mem_block)));
