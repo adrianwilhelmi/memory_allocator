@@ -93,7 +93,7 @@ void*allocate(size_t bytes, const char*file, int line){
 				//return this, maybe chop it into 2 blocks
 				if((mb->size > bytes + sizeof(mem_block) + sizeof(size_t))){
 					//enough memory to chop the block 2 into 2 smaller blocks
-					
+					printf("\n\nTRUE\n\n");
 					size_t new_block_size = mb->size - bytes - sizeof(mem_block);
 					mb->is_free = false;
 					mb->size = bytes;
@@ -111,6 +111,9 @@ void*allocate(size_t bytes, const char*file, int line){
 				
 				pthread_mutex_unlock(&allocator_mutex);
 				
+				mb->file = file;
+				mb->line = line;
+				
 				return mb + 1;
 			}
 		}
@@ -120,7 +123,8 @@ void*allocate(size_t bytes, const char*file, int line){
 	//get new memory block if no available memory found
 	mb = get_new_memory_block(bytes);
 
-//	mb = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	mb->file = file;
+	mb->line = line;
 	
 	pthread_mutex_unlock(&allocator_mutex);
 	
@@ -174,8 +178,8 @@ void dump_memory_info(){
 		printf("\tstart:	%p\n", (void*)((uintptr_t)mb + sizeof(mem_block)));
 		printf("\tend: 	%p\n", (void*)((uintptr_t)mb + sizeof(mem_block) + mb->size));
 		printf("\tsize: 	%zu\n", mb->size);
-		printf("\tfile:	\n");
-		printf("\tline: 	\n");
+		printf("\tfile:	%s\n", mb->file ? mb->file : "unknown file");
+		printf("\tline: 	%d\n", mb->file ? mb->line : -1);
 	}
 	
 	pthread_mutex_unlock(&allocator_mutex);

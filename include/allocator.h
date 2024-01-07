@@ -12,8 +12,9 @@
 typedef struct mem_block{
 	size_t size;
 	bool is_free;
-	uintptr_t*start;
 	struct mem_block*next;
+	const char*file;
+	int line;
 } mem_block;
 
 typedef struct allocator_stats{
