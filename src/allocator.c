@@ -10,6 +10,8 @@ mem_block*heap_head = NULL;
 mem_block*heap_tail = NULL;
 bool was_initialized = 0;
 pthread_mutex_t allocator_mutex;
+allocator_stats alloc_stats;
+unsigned int magic_number = 0x6164726E;
 
 void initialize_allocator(){
 	//initializes the mutex and sets up free_all as function to be called at exit
@@ -20,7 +22,7 @@ void initialize_allocator(){
 	}
 	
 	atexit(report_stats);
-	atexit(free_all);
+//	atexit(free_all);
 	
 	was_initialized = 1;
 	printf("allocator initialized\n");
@@ -61,6 +63,7 @@ static mem_block*get_new_memory_block(size_t size){
 	new_block->size = size;
 	new_block->is_free = false;
 	new_block->next = NULL;
+	new_block->magic_number = magic_number;
 	
 	//initialize global vars if its first allocated block
 	if(heap_head == NULL){
@@ -75,6 +78,8 @@ static mem_block*get_new_memory_block(size_t size){
 		heap_tail = heap_tail->next;
 		heap_tail->next = NULL;
 	}
+	
+	alloc_stats.sbrk_calls += 1;
 	
 	return new_block;
 }
@@ -99,7 +104,6 @@ void*allocate(size_t bytes, const char*file, int line){
 				//return this, maybe chop it into 2 blocks
 				if((mb->size > bytes + sizeof(mem_block) + sizeof(size_t))){
 					//enough memory to chop the block 2 into 2 smaller blocks
-					printf("\n\nTRUE\n\n");
 					size_t new_block_size = mb->size - bytes - sizeof(mem_block);
 					mb->is_free = false;
 					mb->size = bytes;
@@ -114,12 +118,18 @@ void*allocate(size_t bytes, const char*file, int line){
 				else{
 					mb->is_free = false;
 				}
-				
-				pthread_mutex_unlock(&allocator_mutex);
-				
+
 				mb->file = file;
 				mb->line = line;
+
+				alloc_stats.alloc_calls += 1;
+				alloc_stats.bytes_alloced += bytes;
+				if(alloc_stats.memory_usage > alloc_stats.max_memory_usage){
+					alloc_stats.max_memory_usage = alloc_stats.memory_usage;
+				}
 				
+				pthread_mutex_unlock(&allocator_mutex);
+								
 				return mb + 1;
 			}
 		}
@@ -130,6 +140,13 @@ void*allocate(size_t bytes, const char*file, int line){
 
 	mb->file = file;
 	mb->line = line;
+	
+	alloc_stats.alloc_calls += 1;
+	alloc_stats.bytes_alloced += bytes;
+	alloc_stats.memory_usage += bytes;
+	if(alloc_stats.memory_usage > alloc_stats.max_memory_usage){
+		alloc_stats.max_memory_usage = alloc_stats.memory_usage;
+	}
 	
 	pthread_mutex_unlock(&allocator_mutex);
 	
@@ -150,6 +167,8 @@ void my_free(void*addr){
 	
 	mem_block*to_free = (mem_block*)addr - 1;
 	to_free->is_free = true;
+	
+	alloc_stats.memory_usage -= to_free->size;
 	
 	//merge neighbor free blocks
 	mem_block*mb = heap_head;
@@ -193,17 +212,30 @@ void dump_memory_info(){
 	
 	int counter = 1;
 	mem_block*mb;
-	printf("Memory info:\n");
+	printf("========MEMORY INFO========\n");
 	for(mb = heap_head; mb; mb = mb->next){
 		if(mb->is_free){
 			continue;
 		}
+		printf("block\tstart\tend\tsize\tfile\tline\n");
+		printf("%d\t%p\t%p\t%zu\t%s\t%d\n",
+			counter++,
+			(void*)((uintptr_t)mb + sizeof(mem_block)),
+			(void*)((uintptr_t)mb + sizeof(mem_block) + mb->size),
+			mb->size,
+			mb->file ? mb->file : "unknown file",
+			mb->file ? mb->line : -1
+			);
+		
+		/*
 		printf("block %d:\n", counter++);
-		printf("\tstart:	%p\n", (void*)((uintptr_t)mb + sizeof(mem_block)));
-		printf("\tend: 	%p\n", (void*)((uintptr_t)mb + sizeof(mem_block) + mb->size));
-		printf("\tsize: 	%zu\n", mb->size);
-		printf("\tfile:	%s\n", mb->file ? mb->file : "unknown file");
-		printf("\tline: 	%d\n", mb->file ? mb->line : -1);
+		printf("start:	%p\n", (void*)((uintptr_t)mb + sizeof(mem_block)));
+		printf("end: 	%p\n", (void*)((uintptr_t)mb + sizeof(mem_block) + mb->size));
+		printf("size: 	%zu\n", mb->size);
+		printf("file:	%s\n", mb->file ? mb->file : "unknown file");
+		printf("line: 	%d\n", mb->file ? mb->line : -1);
+		printf("\n");
+		*/
 	}
 	
 	pthread_mutex_unlock(&allocator_mutex);

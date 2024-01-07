@@ -17,6 +17,7 @@ extern mem_block*heap_head;
 extern mem_block*heap_tail;
 extern allocator_stats alloc_stats;
 extern pthread_mutex_t allocator_mutex;
+extern unsigned int magic_number;
 
 void initialize_allocator();
 void*allocate(size_t bytes, const char*file, int line);

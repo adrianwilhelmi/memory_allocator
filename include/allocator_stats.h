@@ -4,8 +4,9 @@
 #include<stddef.h>
 
 typedef struct allocator_stats{
-	size_t total_bytes_alloced;
-	size_t max_peek;
+	size_t bytes_alloced;
+	size_t memory_usage;
+	size_t max_memory_usage;
 	size_t mean_bytes_alloced;
 	size_t unfreed_bytes;
 	int alloc_calls;
