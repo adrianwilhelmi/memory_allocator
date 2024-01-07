@@ -1,45 +1,6 @@
 #!/bin/bash
 
-if [ "$(id -u)" != "0" ]; then
-	echo "this script should be run as root" 1>&2
-	exit 1
-fi
-
-function distro() {
-	if [ -f /etc/debian_version ]; then
-		PKG_UPDATE="apt-get update"
-		PKG_INSTALL="apt-get install -y"
-	elif [ -f /etc/redhat-release ]; then
-		PKG_UPDATE="yum makecache -y"
-		PKG_INSTALL="yum install -y"
-	elif [ -f /etc/fedora-release ]; then
-		PKG_UPDATE="dnf makecache -y"
-		PKG_INSTALL="dnf install -y"
-	elif [ -f /etc/arch-release ]; then
-		PKG_UPDATE="pacman -Syu"
-		PKG_INSTALL="pacman -S --noconfirm"
-	elif [ -f /etc/os-release ]; then
-		PKG_UPDATE="zypper refresh"
-		PKG_INSTALL="zypper install -y"
-	else 
-		echo "Unknown distro"
-		exit 1
-	fi
-		
-	export PKG_UPDATE
-	export PKG_INSTALL
-}
-
-distro
-
-if ! sudo $PKG_UPDATE; then
-	echo "failed to update package list"
-	exit 1
-fi
-
-if ! sudo $PKG_INSTALL build-essential; then
-	echo "failed to install required packages"
-	exit 1
-fi
+sudo apt-get update
+sudo apt-get install -y build-essential
 
 echo "environment installed successfully."

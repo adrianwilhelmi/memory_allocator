@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: install dependencies
-        run: ./install_env
+        run: ./scripts/install_env.sh
         
       - name: build and test
         env:
