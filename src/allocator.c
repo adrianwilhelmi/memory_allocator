@@ -2,12 +2,14 @@
 #include<stdio.h>
 #include<stdbool.h>
 
+#include"mem_block.h"
+#include"allocator_stats.h"
 #include"allocator.h"
 
-pthread_mutex_t allocator_mutex;
 mem_block*heap_head = NULL;
 mem_block*heap_tail = NULL;
 bool was_initialized = 0;
+pthread_mutex_t allocator_mutex;
 
 void initialize_allocator(){
 	//initializes the mutex and sets up free_all as function to be called at exit
@@ -17,6 +19,7 @@ void initialize_allocator(){
 		exit(EXIT_FAILURE);
 	}
 	
+	atexit(report_stats);
 	atexit(free_all);
 	
 	was_initialized = 1;

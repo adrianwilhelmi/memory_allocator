@@ -1,13 +1,13 @@
 CFLAGS=-Wall -Wextra -pedantic -ggdb -ggdb3 -O3
 LFLAGS=-Iinclude
 
-all: clean allocator
+all: clean allocator tests
 
-allocator: include/allocator.h src/allocator.c src/main.c
-	$(CC) $(CFLAGS) $(LFLAGS) -o allocator src/allocator.c src/main.c
+allocator: src/allocator.c src/allocator_stats.c src/main.c
+	$(CC) $(CFLAGS) $(LFLAGS) -o allocator src/allocator.c src/allocator_stats.c src/main.c
 
 tests: allocator test/test.c test/test_align.c
-	$(CC) $(CFLAGS) $(LFLAGS) -o tests test/test.c test/test_align.c src/allocator.c
+	$(CC) $(CFLAGS) $(LFLAGS) -o tests test/test.c test/test_align.c src/allocator.c src/allocator_stats.c
 
 regression:
 	make tests
