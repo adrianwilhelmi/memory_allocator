@@ -14,7 +14,7 @@ int main(){
 		double g;
 	};
 	
-	printf("sizeof(struct block): %zu\n", sizeof(struct block));
+	test_align();
 	
 	printf("tests ok\n");
 	

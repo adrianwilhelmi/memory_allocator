@@ -10,19 +10,20 @@ mem_block*heap_tail = NULL;
 bool was_initialized = 0;
 
 void initialize_allocator(){
+	//initializes the mutex and sets up free_all as function to be called at exit
+	
 	if(pthread_mutex_init(&allocator_mutex, NULL) != 0){
 		perror("err initializing mutex");
 		exit(EXIT_FAILURE);
 	}
 	
-	printf("sizeof memblock: %zu\n", sizeof(mem_block));
-	
-//	atexit(free_all);
+	atexit(free_all);
 	
 	was_initialized = 1;
 	printf("allocator initialized\n");
 }
 
+//constructor
 #ifdef __GNUC__
 __attribute__((constructor))
 void init(){
@@ -31,7 +32,7 @@ void init(){
 #endif
 
 static size_t align(size_t size){
-	//rounds up size to size of size_t
+	//rounds up size to be divisible by sizeof(size_t)
 
 	size_t remainder = size % sizeof(size_t);
 	if(remainder == 0){
@@ -41,7 +42,7 @@ static size_t align(size_t size){
 }
 
 static mem_block*get_new_memory_block(size_t size){
-	//allocates size bytes of memory + memory for metadata
+	//allocates size bytes of memory + memory for metadata by raising the program break with sbrk()
 	
 	//calculate total size
 	size_t total_size = size + sizeof(mem_block);
@@ -120,7 +121,6 @@ void*allocate(size_t bytes, const char*file, int line){
 			}
 		}
 	}
-	
 
 	//get new memory block if no available memory found
 	mb = get_new_memory_block(bytes);
@@ -134,7 +134,12 @@ void*allocate(size_t bytes, const char*file, int line){
 }
 
 void my_free(void*addr){
+	//frees the memory block allocated for pointer addr
+	//if this memory block's neighbors are also empty, the blocks get merged
+	//memory block is now again available for alloation
+	
 	if(addr == NULL){
+		//do nothing if got null pointer
 		return;
 	}
 	
@@ -166,7 +171,21 @@ void my_free(void*addr){
 	pthread_mutex_unlock(&allocator_mutex);
 }
 
+void free_all(){
+	//frees all allocated memory
+	//called on exit
+	
+	mem_block*mb;
+	for(mb = heap_head; mb; mb = mb->next){
+		if(!mb->is_free){
+			my_free((void*)(mb + 1));
+		}
+	}
+}
+
 void dump_memory_info(){
+	//prints general information about every block of memory allocated
+	
 	pthread_mutex_lock(&allocator_mutex);
 	
 	int counter = 1;

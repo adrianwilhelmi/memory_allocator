@@ -7,7 +7,8 @@
 #include<pthread.h>
 #include<stdint.h>
 
-#define my_alloc(bytes) allocate(bytes, __FILE__, __LINE__)
+#define alloc(bytes) allocate(bytes, __FILE__, __LINE__)
+#define free(addr) my_free(addr)
 
 typedef struct mem_block{
 	size_t size;
@@ -32,7 +33,8 @@ extern pthread_mutex_t allocator_mutex;
 
 void initialize_allocator();
 void*allocate(size_t bytes, const char*file, int line);
-void free(void*addr);
+void my_free(void*addr);
 void dump_memory_info();
+void free_all();
 
 #endif

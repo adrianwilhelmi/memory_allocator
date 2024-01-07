@@ -3,8 +3,15 @@
 #include"test.h"
 #include"allocator.h"
 
+static size_t round_up(size_t size){
+	if(size % sizeof(size_t) == 0){
+		return size;
+	}
+	size =  (size + sizeof(size_t)) / sizeof(size_t);
+	return size*sizeof(size_t);
+}
+
 void test_align(){
-	
 	struct block{
 		int a;
 		double b;
@@ -15,21 +22,29 @@ void test_align(){
 		double g;
 	};
 	
-	char*a = my_alloc(sizeof(char));
+	printf("sizeof(struct block) %zu\n", sizeof(struct block));
+	printf("sizeof(char) %zu\n", sizeof(char));
+	printf("sizeof(int) %zu\n", sizeof(int));
+	printf("sizeof(size_t) %zu\n", sizeof(size_t));
+
+	printf("sizeof(struct block) rounded up %zu\n", round_up(sizeof(struct block)));	
+	printf("sizeof(char) rounded up %zu\n", round_up(sizeof(char)));
+	
+	char*a = alloc(sizeof(char));
 	dump_memory_info();
 	
-	struct block*block = my_alloc(sizeof(struct block));
+	struct block*block = alloc(sizeof(struct block));
 	dump_memory_info();
 	
-	int*b = my_alloc(sizeof(int));
+	int*b = alloc(sizeof(int));
 	dump_memory_info();
 	
-	my_free(block);
+	free(block);
 	dump_memory_info();
 	
-	int*c = my_alloc(sizeof(int));
+	int*c = alloc(sizeof(int));
 	dump_memory_info();
 	
-	int*d = my_alloc(sizeof(int));
+	int*d = alloc(sizeof(int));
 	dump_memory_info();
 }
