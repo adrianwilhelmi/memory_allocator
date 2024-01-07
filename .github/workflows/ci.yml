@@ -1,0 +1,26 @@
+name: allocator CI
+
+on: [push, pull_request]
+
+jobs:
+	build:
+		strategy:
+			fail-fast: false
+			matrix:
+				compiler: [gcc, clang]
+				flags: ["-ggdb3", "-O3"]
+			runs-on: debian-latest
+			
+			steps:
+			- uses: actions/checkout@v3
+			
+			- name:	install dependencies
+			  run:	./install_env
+			  
+			- name: build and test
+			  env:
+				CC: ${{ matrix.compiler }}
+				CFLAGS ${{ matrix.flags }}
+			  run: |
+				make allocator
+				make tests

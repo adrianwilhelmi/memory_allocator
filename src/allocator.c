@@ -15,6 +15,8 @@ void initialize_allocator(){
 		exit(EXIT_FAILURE);
 	}
 	
+	printf("sizeof memblock: %zu\n", sizeof(mem_block));
+	
 //	atexit(free_all);
 	
 	was_initialized = 1;
