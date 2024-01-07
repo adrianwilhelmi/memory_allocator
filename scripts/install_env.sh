@@ -1,5 +1,10 @@
 #!/bin/bash
 
+if [ "$(id -u)" != "0" ]; then
+	echo "this script should be run as root" 1>&2
+	exit 1
+fi
+
 function distro() {
 	if [ -f /etc/debian_version ]; then
 		PKG_UPDATE="apt-get update"
@@ -37,4 +42,4 @@ if ! sudo $PKG_INSTALL build-essential; then
 	exit 1
 fi
 
-echo "environment installed."
+echo "environment installed successfully."
