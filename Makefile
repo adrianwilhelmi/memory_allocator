@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Wextra -pedantic -ggdb
+CFLAGS=-Wall -Wextra -pedantic -ggdb $(EXTRA_CFLAGS)
 LFLAGS=-Iinclude
 
 all: allocator

@@ -9,7 +9,7 @@ jobs:
 			matrix:
 				compiler: [gcc, clang]
 				flags: ["-ggdb3", "-O3"]
-			runs-on: debian-latest
+			runs-on: ubuntu-latest
 			
 			steps:
 			- uses: actions/checkout@v3
@@ -20,7 +20,7 @@ jobs:
 			- name: build and test
 			  env:
 				CC: ${{ matrix.compiler }}
-				CFLAGS ${{ matrix.flags }}
+				EXTRA_CFLAGS ${{ matrix.flags }}
 			  run: |
 				make allocator
 				make tests
