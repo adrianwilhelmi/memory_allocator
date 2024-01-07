@@ -19,12 +19,14 @@ typedef struct mem_block{
 } mem_block;
 
 typedef struct allocator_stats{
-	int number_of_calls;
-	int total_byes_alloced;
-	int max_peek;
-	int mean_bytes_alloced;
-	int number_of_peeks;
+	int alloc_calls;
+	size_t total_bytes_alloced;
+	size_t max_peek;
+	int sbrk_calls;
+	size_t mean_bytes_alloced;
 	int broken_chunks;
+	int unfreed_blocks;
+	size_t unfreed bytes;
 } allocator_stats;
 
 extern mem_block*heap_head;
