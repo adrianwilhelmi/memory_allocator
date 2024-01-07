@@ -11,22 +11,23 @@
 #define free(addr) my_free(addr)
 
 typedef struct mem_block{
-	size_t size;
-	bool is_free;
 	struct mem_block*next;
 	const char*file;
+	size_t size;
+	unsigned int magic_number;
 	int line;
+	bool is_free;
 } mem_block;
 
 typedef struct allocator_stats{
-	int alloc_calls;
 	size_t total_bytes_alloced;
 	size_t max_peek;
-	int sbrk_calls;
 	size_t mean_bytes_alloced;
+	size_t unfreed_bytes;
+	int alloc_calls;
+	int sbrk_calls;
 	int broken_chunks;
 	int unfreed_blocks;
-	size_t unfreed bytes;
 } allocator_stats;
 
 extern mem_block*heap_head;
