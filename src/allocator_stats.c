@@ -4,6 +4,10 @@
 #include"allocator.h"
 
 void report_stats(){
+	if(heap_head == NULL){
+		return;
+	}
+	
 	int broken_blocks = 0;
 	mem_block*mb;
 	for(mb = heap_head; mb; mb = mb->next){

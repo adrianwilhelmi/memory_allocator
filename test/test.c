@@ -17,11 +17,12 @@ size_t round_up(size_t size){
 void test_align(){
 	b1*blck3 = alloc(sizeof(b3));
 	
-	//if 32bit arch
+	//if 32bit architecture
 	if(sizeof(b3) == 12){
 		assert(alloc_stats.bytes_alloced == 12);
 		assert(alloc_stats.max_memory_usage == 12);
 	}
+	//if 64bit architecture
 	else if(sizeof(b3) == 16){
 		assert(alloc_stats.bytes_alloced == 16);
 		assert(alloc_stats.max_memory_usage == 16);
@@ -49,33 +50,26 @@ void test_alloc_free(){
 
 void test_alloc_use_empty_block(){
 	int*a = alloc(sizeof(int));
-	
-	//char*to_be_freed = alloc(sizeof(mem_block) + sizeof(char) + sizeof(size_t));
-	
 	b4*to_be_freed = alloc(sizeof(b4));
-	
 	int*b = alloc(sizeof(int));
 	
 	//check if everything is ok
-	
-	dump_memory_info();
-	report_stats();
-	
-	printf("round up sizeof int: %ld\n", round_up(sizeof(int)));
-	printf("round up sizeof b4: %ld\n", round_up(sizeof(b4)));
-	
+		
 	size_t total = round_up(sizeof(int));
 	total += round_up(sizeof(b4));
 	total += round_up(sizeof(int));
 	
-	printf("total: %zu\n", total);
+	size_t max_mem = total;
 	
 	assert(alloc_stats.bytes_alloced == total);
 	assert(alloc_stats.alloc_calls == 3);
 	assert(alloc_stats.sbrk_calls == 3);
 	
+	
+	
 	free(to_be_freed);
 	
+	//now there should be enough empty space, so we dont raise program break with sbrk
 	char*should_be_in_the_middle = alloc(sizeof(char));
 	
 	total += round_up(sizeof(char));
@@ -83,7 +77,7 @@ void test_alloc_use_empty_block(){
 	assert(alloc_stats.bytes_alloced == total);
 	assert(alloc_stats.alloc_calls == 4);
 	assert(alloc_stats.sbrk_calls == 3);
-	
+	assert(alloc_stats.max_memory_usage == max_mem);
 	free(should_be_in_the_middle);
 	free(a);
 	free(b);
@@ -93,22 +87,23 @@ void test_alloc_use_empty_block(){
 
 
 int main(){
-	
+	printf("unit tests:\n");
+	printf("1 ");
 	test_align();
-	dump_memory_info();
 	free_all();
 	clean_stats(&alloc_stats);
 	
+	printf("2 ");
 	test_alloc_free();
-	dump_memory_info();
 	free_all();
 	clean_stats(&alloc_stats);	
 	
+	printf("3 ");
 	test_alloc_use_empty_block();
 	free_all();
 	clean_stats(&alloc_stats);
 	
-	printf("tests ok\n");
+	printf("unit tests ok\n");
 	
 	return 0;
 }
