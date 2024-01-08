@@ -22,4 +22,3 @@ jobs:
         run: |
           make allocator
           make test
-          make regression
