@@ -1,6 +1,6 @@
 CFLAGS=-Wall -Wextra -pedantic -ggdb -ggdb3 -O3
 LFLAGS=-Iinclude
-VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes
+VALGRIND_FLAGS=--leak-check=full --show-leak-kinds=all --track-origins=yes --trace-children=yes --error-exitcode=1
 
 all: clean allocator compile_tests
 
@@ -15,15 +15,17 @@ run_tests:
 
 test: compile_tests run_tests
 
-valgrind_test:
+test_valgrind:
 	valgrind $(VALGRIND_FLAGS) ./tests
 
 regression:
-	make test
-	make valgrind_test
+	make clean
+	make compile_tests
+	make test_valgrind
+	make clean
 
 install:
 	scripts/install_lib.sh
 
 clean:
-	rm -f allocator tests *.o
+	rm -f allocator tests *.o *.gcno *.gcda
