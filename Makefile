@@ -1,4 +1,4 @@
-CFLAGS=-Wall -Wextra -pedantic -ggdb -ggdb3 -O3
+CFLAGS=-Wall -Wextra -pedantic -ggdb -ggdb3 -O3 -pthread
 LFLAGS=-Iinclude
 VALGRIND_FLAGS=--leak-check=full --show-leak-kinds=all --track-origins=yes --trace-children=yes --error-exitcode=1
 
