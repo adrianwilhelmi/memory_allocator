@@ -15,13 +15,13 @@ run_tests:
 
 test: compile_tests run_tests
 
-test_valgrind:
+run_tests_valgrind:
 	valgrind $(VALGRIND_FLAGS) ./tests
 
 regression:
 	make clean
 	make compile_tests
-	make test_valgrind
+	make run_tests_valgrind
 	make clean
 
 install:
