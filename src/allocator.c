@@ -167,6 +167,7 @@ void my_free(void*addr){
 		return;
 	}
 	
+	
 	pthread_mutex_lock(&allocator_mutex);
 	
 	mem_block*to_free = (mem_block*)addr - 1;

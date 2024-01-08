@@ -7,6 +7,7 @@ void test_alloc_use_empty_block();
 void test_alloc_zero();
 void test_multithread();
 void test_huge_alloc();
+void test_alloc_and_data_usage();
 
 typedef struct b1{
 	//size 56

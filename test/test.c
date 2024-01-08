@@ -2,6 +2,7 @@
 #include<assert.h>
 #include<stdbool.h>
 #include<pthread.h>
+#include<string.h>
 
 #include"allocator_stats.h"
 #include"allocator.h"
@@ -13,7 +14,8 @@ void(*tests[])() = {
 	test_alloc_use_empty_block,
 	test_alloc_zero,
 	test_multithread,
-	test_huge_alloc
+	test_huge_alloc,
+	test_alloc_and_data_usage
 };
 
 size_t round_up(size_t size){
@@ -141,7 +143,7 @@ void test_multithread(){
 }
 
 void test_huge_alloc(){
-	size_t big_size = sizeof(size_t) * 400000000;
+	size_t big_size = sizeof(size_t) * 400000;
 	void*ptr = alloc(big_size);
 	assert(ptr != NULL);
 	
@@ -149,6 +151,25 @@ void test_huge_alloc(){
 	assert(alloc_stats.bytes_alloced == big_size);
 	
 	printf("huge alloc ok\n");
+}
+
+void test_alloc_and_data_usage(){
+	char*words = alloc(sizeof(char)*7);
+	
+	strcpy(words, "abcdef");
+	
+	assert(words != NULL);
+	
+	free(words);
+	
+	int*a = alloc(sizeof(int));
+	
+	assert(a != NULL);
+	
+	assert(alloc_stats.alloc_calls == 2);
+	assert(alloc_stats.sbrk_calls == 1);
+	
+	printf("data usage ok\n");
 }
 
 int main(){

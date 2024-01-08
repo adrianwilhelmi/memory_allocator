@@ -31,22 +31,20 @@ void report_stats(){
 		broken_blocks
 		);
 	
-	/*
-	printf("alloc_calls	%d\n", alloc_stats.alloc_calls);
-	printf("sbrk_calls	%d\n", alloc_stats.sbrk_calls);
-	printf("total_bytes_alloced	%zu\n", alloc_stats.bytes_alloced);
-	printf("mean_bytes_alloced	%zu\n", alloc_stats.bytes_alloced / alloc_stats.alloc_calls);
-	printf("max_memory_usage	%zu\n", alloc_stats.max_memory_usage);
-	printf("broken_blocks	%d\n", broken_blocks);
-	*/
-	
-	printf("\nUNFREED BLOCKS\n");
-	printf("%-9s %-5s %-20s\n", "block_id", "line", "file");
 	for(mb = heap_head; mb; mb = mb->next){
 		if(!mb->is_free){
-			printf("%-9d %-5d %-20s\n", mb->block_id, mb->line, mb->file);
+			printf("\nUNFREED BLOCKS\n");
+			printf("%-9s %-5s %-20s\n", "block_id", "line", "file");
+			for(mb = heap_head; mb; mb = mb->next){
+				if(!mb->is_free){
+					printf("%-9d %-5d %-20s\n", mb->block_id, mb->line, mb->file);
+				}
+			}
 		}
+		break;
 	}
+	
+	
 }
 
 void clean_stats(allocator_stats*stats){
