@@ -21,4 +21,4 @@ jobs:
           CC: ${{ matrix.compiler }}
         run: |
           make allocator
-          make tests
+          make test
