@@ -37,10 +37,18 @@ void report_stats(){
 	*/
 	
 	printf("\nUNFREED BLOCKS\n");
-	printf("%-6s %-5s %-20s\n", "block", "line", "file");
+	printf("%-6s %-5s %-20s\n", "block_id", "line", "file");
 	for(mb = heap_head; mb; mb = mb->next){
 		if(!mb->is_free){
 			printf("%-6d %-5d %-20s\n", mb->block_id, mb->line, mb->file);
 		}
 	}
+}
+
+void clean_stats(allocator_stats*stats){
+	stats->bytes_alloced = 0;
+	stats->memory_usage = 0;
+	stats->max_memory_usage = 0;
+	stats->alloc_calls = 0;
+	stats->sbrk_calls = 0;
 }

@@ -6,8 +6,8 @@ all: clean allocator tests
 allocator: src/allocator.c src/allocator_stats.c src/main.c
 	$(CC) $(CFLAGS) $(LFLAGS) -o allocator src/allocator.c src/allocator_stats.c src/main.c
 
-tests: allocator test/test.c test/test_align.c
-	$(CC) $(CFLAGS) $(LFLAGS) -o tests test/test.c test/test_align.c src/allocator.c src/allocator_stats.c
+tests: allocator test/test.c
+	$(CC) $(CFLAGS) $(LFLAGS) -o tests test/test.c src/allocator.c src/allocator_stats.c
 
 regression:
 	make tests

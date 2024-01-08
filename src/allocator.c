@@ -16,6 +16,7 @@ static unsigned int global_block_id = 0;
 
 void initialize_allocator(){
 	//initializes the mutex and sets up free_all as function to be called at exit
+	//if no gnuc then allocator will be initalized with first allocation
 	
 	if(pthread_mutex_init(&allocator_mutex, NULL) != 0){
 		perror("err initializing mutex");
@@ -200,12 +201,21 @@ void free_all(){
 	//frees all allocated memory
 	//called on exit
 	
+	/*
 	mem_block*mb;
 	for(mb = heap_head; mb; mb = mb->next){
 		if(!mb->is_free){
 			my_free((void*)(mb + 1));
 		}
 	}
+	*/
+	
+	if(brk(heap_head) == -1){
+		perror("err freeing mem");
+	}
+	
+	heap_head = NULL;
+	heap_tail = NULL;
 }
 
 void dump_memory_info(){
@@ -215,7 +225,7 @@ void dump_memory_info(){
 	
 	mem_block*mb;
 //	printf("MEMORY INFO\n");
-	printf("%-12s %-12s %-22s %-22s %-20s %-12s", "block", "size", "start", "end", "line", "file");
+	printf("%-12s %-12s %-22s %-22s %-20s %-12s", "block_id", "size", "start", "end", "line", "file");
 	printf("\n");
 	for(mb = heap_head; mb; mb = mb->next){
 		if(mb->is_free){
