@@ -91,7 +91,9 @@ static mem_block*get_new_memory_block(size_t size){
 void*allocate(size_t bytes, const char*file, int line){
 	//returns pointer to existing free memory block, or raises the program break if no free block is found
 	
-	if(bytes == 0){
+	alloc_stats.alloc_calls += 1;
+	
+	if(bytes <= 0){
 		return NULL;
 	}
 	
@@ -126,7 +128,6 @@ void*allocate(size_t bytes, const char*file, int line){
 				mb->file = file;
 				mb->line = line;
 
-				alloc_stats.alloc_calls += 1;
 				alloc_stats.bytes_alloced += bytes;
 				if(alloc_stats.memory_usage > alloc_stats.max_memory_usage){
 					alloc_stats.max_memory_usage = alloc_stats.memory_usage;
@@ -145,7 +146,6 @@ void*allocate(size_t bytes, const char*file, int line){
 	mb->file = file;
 	mb->line = line;
 	
-	alloc_stats.alloc_calls += 1;
 	alloc_stats.bytes_alloced += bytes;
 	alloc_stats.memory_usage += bytes;
 	if(alloc_stats.memory_usage > alloc_stats.max_memory_usage){
@@ -201,15 +201,6 @@ void free_all(){
 	//frees all allocated memory
 	//called on exit
 	
-	/*
-	mem_block*mb;
-	for(mb = heap_head; mb; mb = mb->next){
-		if(!mb->is_free){
-			my_free((void*)(mb + 1));
-		}
-	}
-	*/
-	
 	if(brk(heap_head) == -1){
 		perror("err freeing mem");
 	}
@@ -221,10 +212,14 @@ void free_all(){
 void dump_memory_info(){
 	//prints general information about every block of memory allocated
 	
+	if(heap_head == NULL){
+		printf("no memory allocated\n");
+		return;
+	}
+	
 	pthread_mutex_lock(&allocator_mutex);
 	
 	mem_block*mb;
-//	printf("MEMORY INFO\n");
 	printf("%-12s %-12s %-22s %-22s %-20s %-12s", "block_id", "size", "start", "end", "line", "file");
 	printf("\n");
 	for(mb = heap_head; mb; mb = mb->next){
@@ -239,26 +234,6 @@ void dump_memory_info(){
 			mb->file ? mb->line : -1,
 			mb->file ? mb->file : "unknown file"
 			);
-			
-		/*
-		printf("%d\t%p\t%p\t%zu\t%s\t%d\n",
-			counter++,
-			(void*)((uintptr_t)mb + sizeof(mem_block)),
-			(void*)((uintptr_t)mb + sizeof(mem_block) + mb->size),
-			mb->size,
-			mb->file ? mb->file : "unknown file",
-			mb->file ? mb->line : -1
-			);
-		*/
-		/*
-		printf("block %d:\n", counter++);
-		printf("start:	%p\n", (void*)((uintptr_t)mb + sizeof(mem_block)));
-		printf("end: 	%p\n", (void*)((uintptr_t)mb + sizeof(mem_block) + mb->size));
-		printf("size: 	%zu\n", mb->size);
-		printf("file:	%s\n", mb->file ? mb->file : "unknown file");
-		printf("line: 	%d\n", mb->file ? mb->line : -1);
-		printf("\n");
-		*/
 	}
 	printf("\n");
 	

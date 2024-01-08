@@ -12,7 +12,7 @@ compile_tests: allocator test/test.c
 run_tests:
 	./tests
 
-tests: compile_tests run_tests
+test: compile_tests run_tests
 
 regression:
 	make tests

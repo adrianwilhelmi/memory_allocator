@@ -2,6 +2,11 @@
 #define __TEST_H__
 
 void test_alloc_free();
+void test_align();
+void test_alloc_use_empty_block();
+void test_alloc_zero();
+void test_multithread();
+void test_huge_alloc();
 
 typedef struct b1{
 	//size 56
@@ -13,20 +18,6 @@ typedef struct b1{
 	double f;
 	double g;
 } b1;
-
-typedef struct b2{
-	//64bit -> size 64
-	//32bit -> size 60
-	
-	int a;
-	double b;
-	double c;
-	double d;
-	double e;
-	double f;
-	double g;
-	int h;
-} b2;
 
 typedef struct b3{
 	//32bit -> size 12

@@ -1,10 +1,20 @@
 #include<stdio.h>
 #include<assert.h>
 #include<stdbool.h>
+#include<pthread.h>
 
 #include"allocator_stats.h"
 #include"allocator.h"
 #include"test.h"
+
+void(*tests[])() = {
+	test_align, 
+	test_alloc_free,
+	test_alloc_use_empty_block,
+	test_alloc_zero,
+	test_multithread,
+	test_huge_alloc
+};
 
 size_t round_up(size_t size){
 	if(size % sizeof(size_t) == 0){
@@ -15,7 +25,7 @@ size_t round_up(size_t size){
 }
 
 void test_align(){
-	b1*blck3 = alloc(sizeof(b3));
+	b3*blck3 = alloc(sizeof(b3));
 	
 	//if 32bit architecture
 	if(sizeof(b3) == 12){
@@ -85,23 +95,72 @@ void test_alloc_use_empty_block(){
 	printf("empty block test ok\n");
 }
 
+void test_alloc_zero(){
+	void*ptr = alloc(0);
+	assert(ptr == NULL);
+
+	assert(alloc_stats.bytes_alloced == 0);
+	assert(alloc_stats.sbrk_calls == 0);
+	assert(alloc_stats.alloc_calls == 1);
+	
+	printf("alloc zero ok\n");
+}
+
+static void*couple_of_allocations(){
+	int number_of_allocations = 40;
+	void*ptrs[number_of_allocations];
+	
+	for(int i = 0; i < number_of_allocations; ++i){
+		size_t size = i + 1;
+		ptrs[i] = alloc(size);
+		assert(ptrs[i] != NULL);
+	}
+	
+	for(int i = 0; i < number_of_allocations; ++i){
+		free(ptrs[i]);
+	}
+	
+	return NULL;
+}
+
+void test_multithread(){
+	int num_of_threads = 7;
+	pthread_t threads[num_of_threads];
+	
+	for(int i = 0; i < num_of_threads; ++i){
+		int result = pthread_create(&threads[i], NULL, couple_of_allocations, NULL);
+		assert(result == 0);
+	}
+	
+	for(int i = 0; i < num_of_threads; ++i){
+		int result = pthread_join(threads[i], NULL);
+		assert(result == 0);
+	}
+	
+	printf("multithreading ok\n");
+}
+
+void test_huge_alloc(){
+	size_t big_size = sizeof(size_t) * 400000000;
+	void*ptr = alloc(big_size);
+	assert(ptr != NULL);
+	
+	assert(alloc_stats.alloc_calls == 1);
+	assert(alloc_stats.bytes_alloced == big_size);
+	
+	printf("huge alloc ok\n");
+}
 
 int main(){
 	printf("unit tests:\n");
-	printf("1 ");
-	test_align();
-	free_all();
-	clean_stats(&alloc_stats);
 	
-	printf("2 ");
-	test_alloc_free();
-	free_all();
-	clean_stats(&alloc_stats);	
-	
-	printf("3 ");
-	test_alloc_use_empty_block();
-	free_all();
-	clean_stats(&alloc_stats);
+	int number_of_tests = sizeof(tests) / sizeof(tests[0]);
+	for(int i = 0; i < number_of_tests; ++i){
+		printf("%d ", i+1);
+		tests[i]();
+		free_all();
+		clean_stats(&alloc_stats);
+	}
 	
 	printf("unit tests ok\n");
 	
