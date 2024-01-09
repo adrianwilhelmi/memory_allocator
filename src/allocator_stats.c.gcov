@@ -1,0 +1,4 @@
+        -:    0:Source:src/allocator_stats.c
+        -:    0:Graph:gcov_tests-allocator_stats.gcno
+        -:    0:Data:gcov_tests-allocator_stats.gcda
+        -:    0:Runs:1
