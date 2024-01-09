@@ -111,7 +111,6 @@ void test_alloc_zero(){
 static void*couple_of_allocations(){
 	int number_of_allocations = 40;
 	void*ptrs[number_of_allocations];
-	
 	for(int i = 0; i < number_of_allocations; ++i){
 		size_t size = i + 1;
 		ptrs[i] = alloc(size);
@@ -125,8 +124,8 @@ static void*couple_of_allocations(){
 	return NULL;
 }
 
-void test_multithread(){
-	int num_of_threads = 7;
+void test_multithread(){	
+	int num_of_threads = 20;
 	pthread_t threads[num_of_threads];
 	
 	for(int i = 0; i < num_of_threads; ++i){
@@ -171,6 +170,42 @@ void test_alloc_and_data_usage(){
 	printf("data usage ok\n");
 }
 
+void test_e2e_no_seg(){
+	void*ptr1 = alloc(10*sizeof(size_t));
+	void*ptr2 = alloc(100*sizeof(size_t));
+	void*ptr3 = alloc(20*sizeof(size_t));
+	
+	dump_memory_info();
+	
+	free(ptr2);
+	
+	dump_memory_info();
+	
+	void*ptr4 = alloc(sizeof(size_t));
+	void*ptr5 = alloc(4*sizeof(size_t));
+	
+	dump_memory_info();
+	
+	free(ptr1);
+	free(ptr4);
+	
+	dump_memory_info();
+	
+	free(ptr3);
+	
+	dump_memory_info();
+	
+	free(ptr5);
+	
+	dump_memory_info();
+	
+	void*ptr6 = alloc(135*sizeof(size_t));
+	
+	dump_memory_info();
+	
+	free(ptr6);
+}
+
 int main(){
 	printf("unit tests:\n");
 	
@@ -182,7 +217,11 @@ int main(){
 		clean_stats(&alloc_stats);
 	}
 	
-	printf("unit tests ok\n");
+	printf("unit tests ok\n");	
+	
+	printf("e2e tests\n");
+	test_e2e_no_seg();
+	
 	
 	return 0;
 }

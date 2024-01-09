@@ -90,13 +90,15 @@ static mem_block*get_new_memory_block(size_t size){
 void*allocate(size_t bytes, const char*file, int line){
 	//returns pointer to existing free memory block, or raises the program break if no free block is found
 	
+	pthread_mutex_lock(&allocator_mutex);
+	
 	alloc_stats.alloc_calls += 1;
 	
 	if(bytes <= 0){
+		pthread_mutex_unlock(&allocator_mutex);
 		return NULL;
 	}
 	
-	pthread_mutex_lock(&allocator_mutex);
 	
 	bytes = align(bytes);
 	
@@ -105,8 +107,8 @@ void*allocate(size_t bytes, const char*file, int line){
 	//search for free memory in previously allocated blocks
 	if(heap_head != NULL){
 		for(mb = heap_head; mb; mb = mb->next){
-			check_block(mb);
 			if(mb->is_free == true && mb->size >= bytes){
+				check_block(mb);
 				//return this, maybe chop it into 2 blocks
 				if((mb->size > bytes + sizeof(mem_block) + sizeof(size_t))){
 					//enough memory to chop the block 2 into 2 smaller blocks
@@ -121,6 +123,7 @@ void*allocate(size_t bytes, const char*file, int line){
 					
 					new_block->next = mb->next;
 					mb->next = new_block;
+					mb->magic_number = magic_number;
 				}
 				else{
 					mb->is_free = false;
@@ -163,18 +166,18 @@ void my_free(void*addr){
 	//if this memory block's neighbors are also empty, the blocks get merged
 	//memory block is now again available for alloation
 	
+	pthread_mutex_lock(&allocator_mutex);
+	
 	if(addr == NULL){
 		//do nothing if got null pointer
+		pthread_mutex_unlock(&allocator_mutex);
 		return;
 	}
 	
 	
-	pthread_mutex_lock(&allocator_mutex);
-	
 	mem_block*to_free = (mem_block*)addr - 1;
 	check_block(to_free);
 	to_free->is_free = true;
-	
 
 	alloc_stats.memory_usage -= to_free->size;
 	
@@ -205,23 +208,30 @@ void free_all(){
 	//frees all allocated memory
 	//called on exit
 	
+	pthread_mutex_lock(&allocator_mutex);
+	
 	if(brk(heap_head) == -1){
 		perror("err freeing mem");
 	}
 	
+	alloc_stats.memory_usage = 0;
+	
 	heap_head = NULL;
 	heap_tail = NULL;
+	
+	pthread_mutex_unlock(&allocator_mutex);
 }
 
 void dump_memory_info(){
 	//prints general information about every block of memory allocated
 	
+	pthread_mutex_lock(&allocator_mutex);
+	
 	if(heap_head == NULL){
 		printf("no memory allocated\n");
+		pthread_mutex_unlock(&allocator_mutex);
 		return;
 	}
-	
-	pthread_mutex_lock(&allocator_mutex);
 	
 	mem_block*mb;
 	printf("%-12s %-12s %-22s %-22s %-20s %-12s", "block_id", "size", "start", "end", "line", "file");
