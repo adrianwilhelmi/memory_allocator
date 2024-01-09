@@ -4,6 +4,8 @@
 #include<stddef.h>
 #include<stdbool.h>
 
+extern unsigned int magic_number;
+
 typedef struct mem_block{
 	struct mem_block*next;
 	const char*file;
@@ -13,5 +15,7 @@ typedef struct mem_block{
 	unsigned int block_id;
 	bool is_free;
 } mem_block;
+
+void check_block(mem_block*mb);
 
 #endif

@@ -11,7 +11,6 @@ mem_block*heap_tail = NULL;
 bool was_initialized = 0;
 pthread_mutex_t allocator_mutex;
 allocator_stats alloc_stats;
-unsigned int magic_number = 0x6164726E;
 static unsigned int global_block_id = 0;
 
 void initialize_allocator(){
@@ -106,6 +105,7 @@ void*allocate(size_t bytes, const char*file, int line){
 	//search for free memory in previously allocated blocks
 	if(heap_head != NULL){
 		for(mb = heap_head; mb; mb = mb->next){
+			check_block(mb);
 			if(mb->is_free == true && mb->size >= bytes){
 				//return this, maybe chop it into 2 blocks
 				if((mb->size > bytes + sizeof(mem_block) + sizeof(size_t))){
@@ -117,6 +117,7 @@ void*allocate(size_t bytes, const char*file, int line){
 					mem_block*new_block = (mem_block*)((uintptr_t)(mb + 1) + bytes);
 					new_block->is_free = true;
 					new_block->size = new_block_size;
+					new_block->magic_number = magic_number;
 					
 					new_block->next = mb->next;
 					mb->next = new_block;
@@ -171,8 +172,10 @@ void my_free(void*addr){
 	pthread_mutex_lock(&allocator_mutex);
 	
 	mem_block*to_free = (mem_block*)addr - 1;
+	check_block(to_free);
 	to_free->is_free = true;
 	
+
 	alloc_stats.memory_usage -= to_free->size;
 	
 	//merge neighbor free blocks

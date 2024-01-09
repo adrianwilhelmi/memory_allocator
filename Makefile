@@ -3,16 +3,13 @@ LFLAGS=-Iinclude
 VALGRIND_FLAGS=--leak-check=full --show-leak-kinds=all --track-origins=yes --trace-children=yes --error-exitcode=1
 GCOV_FLAGS=-fprofile-arcs -ftest-coverage
 
-all: clean allocator compile_tests
+all: clean compile_tests
 
-allocator: src/allocator.c src/allocator_stats.c
-	$(CC) $(CFLAGS) $(LFLAGS) -o allocator src/allocator.c src/allocator_stats.c
+compile_tests: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c 
+	$(CC) $(CFLAGS) $(LFLAGS) -o tests test/test.c src/allocator.c src/allocator_stats.c src/mem_block.c
 
-compile_tests: test/test.c 
-	$(CC) $(CFLAGS) $(LFLAGS) -o tests test/test.c src/allocator.c src/allocator_stats.c
-
-compile_gcov: src/allocator.c src/allocator_stats.c test/test.c
-	$(CC) $(CFLAGS) $(GCOV_FLAGS) $(LFLAGS) -o gcov_tests test/test.c src/allocator.c src/allocator_stats.c
+compile_gcov: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c
+	$(CC) $(CFLAGS) $(GCOV_FLAGS) $(LFLAGS) -o tests test/test.c src/allocator.c src/allocator_stats.c src/mem_block.c
 
 run_tests:
 	./tests
@@ -23,19 +20,21 @@ run_tests_valgrind:
 	valgrind $(VALGRIND_FLAGS) ./tests
 
 run_gcov:
-	./gcov_tests
+	./tests
 	mv *.gcda src
 	mv *.gcno src
-	cd src && gcov gcov_tests-allocator.c
+	cd src && gcov tests-allocator.c
 	cd src && rm *.gcda
 	cd src && rm *.gcno
-	rm gcov_tests
+	cd src && rm *.gcov
 	
 gcov: compile_gcov run_gcov
-
+	rm gcov_tests
+	
 regression:
 	make clean
 	make compile_gcov
+	make run_gcov
 	make run_tests_valgrind
 	make clean
 
@@ -43,4 +42,4 @@ install:
 	scripts/install_lib.sh
 
 clean:
-	rm -f allocator tests gcov_tests *.o
+	rm -f allocator tests *.o *.gcda *.gcno

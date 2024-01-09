@@ -117,7 +117,7 @@ static void*couple_of_allocations(){
 		ptrs[i] = alloc(size);
 		assert(ptrs[i] != NULL);
 	}
-	
+
 	for(int i = 0; i < number_of_allocations; ++i){
 		free(ptrs[i]);
 	}
@@ -133,7 +133,6 @@ void test_multithread(){
 		int result = pthread_create(&threads[i], NULL, couple_of_allocations, NULL);
 		assert(result == 0);
 	}
-	
 	for(int i = 0; i < num_of_threads; ++i){
 		int result = pthread_join(threads[i], NULL);
 		assert(result == 0);
