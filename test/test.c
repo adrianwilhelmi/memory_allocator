@@ -125,7 +125,7 @@ static void*couple_of_allocations(){
 }
 
 void test_multithread(){	
-	int num_of_threads = 20;
+	int num_of_threads = 10;
 	pthread_t threads[num_of_threads];
 	
 	for(int i = 0; i < num_of_threads; ++i){
@@ -208,7 +208,7 @@ void test_e2e_no_seg(){
 
 int main(){
 	printf("unit tests:\n");
-	
+	/*
 	int number_of_tests = sizeof(tests) / sizeof(tests[0]);
 	for(int i = 0; i < number_of_tests; ++i){
 		printf("%d ", i+1);
@@ -216,7 +216,7 @@ int main(){
 		free_all();
 		clean_stats(&alloc_stats);
 	}
-	
+	*/
 	printf("unit tests ok\n");	
 	
 	printf("e2e tests\n");

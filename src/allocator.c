@@ -120,6 +120,7 @@ void*allocate(size_t bytes, const char*file, int line){
 					new_block->is_free = true;
 					new_block->size = new_block_size;
 					new_block->magic_number = magic_number;
+					new_block->block_id = global_block_id++;
 					
 					new_block->next = mb->next;
 					mb->next = new_block;
@@ -236,7 +237,20 @@ void dump_memory_info(){
 	mem_block*mb;
 	printf("%-12s %-12s %-22s %-22s %-20s %-12s", "block_id", "size", "start", "end", "line", "file");
 	printf("\n");
-	for(mb = heap_head; mb; mb = mb->next){
+	
+	for(mb = heap_head; mb->next; mb = mb->next){
+		if(!(mb->is_free)){
+			break;
+		}
+	}
+	
+	if(mb == heap_tail && mb->is_free){
+		printf("no memory allocated\n");
+		pthread_mutex_unlock(&allocator_mutex);
+		return;
+	}
+	
+	for(; mb; mb = mb->next){
 		if(mb->is_free){
 			continue;
 		}
