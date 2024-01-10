@@ -170,55 +170,9 @@ void test_alloc_and_data_usage(){
 	printf("data usage ok\n");
 }
 
-void test_e2e_no_seg(){
-	void*ptr1 = alloc(10*sizeof(size_t));
-	void*ptr2 = alloc(100*sizeof(size_t));
-	void*ptr3 = alloc(20*sizeof(size_t));
-	
-	dump_memory_info();
-	
-	free(ptr2);
-	
-	dump_memory_info();
-	
-	void*ptr4 = alloc(sizeof(size_t));
-	void*ptr5 = alloc(4*sizeof(size_t));
-	
-	dump_memory_info();
-	
-	free(ptr1);
-	
-	dump_memory_info();
-	
-	free(ptr4);
-	
-	dump_memory_info();
-	
-	free(ptr3);
-	
-	dump_memory_info();
-	
-	free(ptr5);
-	
-	dump_memory_info();
-	
-	printf("here b4 crash1\n");
-	void*ptr6 = alloc(20*sizeof(size_t));
-	for(int i = 0; i < 100; ++i){
-		free(ptr6);
-		printf("i: %d\n", i);
-		ptr6 = alloc(i*sizeof(size_t));
-	}
-	
-	dump_memory_info();
-	
-	free(ptr6);
-	
-	dump_memory_info();
-	
-}
-
 void run_unit_tests(){
+	printf("UNIT TESTS:\n");
+	
 	int number_of_tests = sizeof(tests) / sizeof(tests[0]);
 	for(int i = 0; i < number_of_tests; ++i){
 		printf("%d ", i+1);
@@ -226,14 +180,107 @@ void run_unit_tests(){
 		free_all();
 		clean_stats(&alloc_stats);
 	}
+	printf("UNIT TESTS Ok.\n\n");
+}
+
+void test_e2e_no_seg(){
+	size_t expected_bytes_alloced = 0;
+	size_t expected_memory_usage = 0;
+	size_t expected_max_memory_usage = 0;
+	int expected_alloc_calls = 0;
+	int expected_sbrk_calls = 0;
+	int expected_broken_blocks = 0;
+	
+	int*a = alloc(sizeof(int));
+	++expected_alloc_calls;
+	++expected_sbrk_calls;
+	expected_bytes_alloced += round_up(sizeof(int));
+	expected_memory_usage += round_up(sizeof(int));
+	if(expected_max_memory_usage < expected_memory_usage){
+		expected_max_memory_usage = expected_memory_usage;
+	}
+	
+	void*b = alloc(20*sizeof(size_t));
+	++expected_alloc_calls;
+	++expected_sbrk_calls;
+	expected_bytes_alloced += round_up(20*sizeof(size_t));
+	expected_memory_usage += round_up(20*sizeof(size_t));
+	if(expected_max_memory_usage < expected_memory_usage){
+		expected_max_memory_usage = expected_memory_usage;
+	}
+	
+	char*c = alloc(sizeof(char));
+	++expected_alloc_calls;
+	++expected_sbrk_calls;
+	expected_bytes_alloced += round_up(sizeof(char));
+	expected_memory_usage += round_up(sizeof(char));
+	if(expected_max_memory_usage < expected_memory_usage){
+		expected_max_memory_usage = expected_memory_usage;
+	}
+	
+	expected_memory_usage -= round_up(20*sizeof(size_t));
+	free(b);
+	
+	void*d = alloc(10*sizeof(size_t));
+	++expected_alloc_calls;
+	expected_bytes_alloced += round_up(10*sizeof(size_t));
+	expected_memory_usage += round_up(10*sizeof(size_t));
+	if(expected_max_memory_usage < expected_memory_usage){
+		expected_max_memory_usage = expected_memory_usage;
+	}
+	
+	void*e = alloc(4000*sizeof(size_t));
+	++expected_alloc_calls;
+	++expected_sbrk_calls;
+	expected_bytes_alloced += round_up(4000*sizeof(size_t));
+	expected_memory_usage += round_up(4000*sizeof(size_t));
+	if(expected_max_memory_usage < expected_memory_usage){
+		expected_max_memory_usage = expected_memory_usage;
+	}
+	
+	free(a);
+	free(c);
+	free(d);
+	free(e);
+	
+	expected_memory_usage -= round_up(sizeof(int));
+	expected_memory_usage -= round_up(sizeof(char));
+	expected_memory_usage -= round_up(10*sizeof(size_t));
+	expected_memory_usage -= round_up(4000*sizeof(size_t));
+	
+	for(int i = 0; i < 100; ++i){
+		void*ptr = alloc(i*sizeof(size_t));
+		++expected_alloc_calls;
+		expected_bytes_alloced += round_up(i*sizeof(size_t));
+		expected_memory_usage += round_up(i*sizeof(size_t));
+		if(expected_max_memory_usage < expected_memory_usage){
+			expected_max_memory_usage = expected_memory_usage;
+		}
+				
+		free(ptr);
+		expected_memory_usage -= round_up(i*sizeof(size_t));
+
+	}
+	
+	
+	printf("\nEXPECTED ALLOCATOR STATS\n");
+	
+	printf("%-12s %-12s %-22s %-22s %-20s %-12s \n", "alloc_calls", "sbrk_calls", "total_bytes_alloced",
+		"mean_bytes_alloced", "max_memory_usage", "broken_blocks"
+		);
+	
+	printf("%-12d %-12d %-22zu %-22zu %-20zu %-12d \n",
+		expected_alloc_calls,
+		expected_sbrk_calls,
+		expected_bytes_alloced,
+		expected_bytes_alloced / expected_alloc_calls,
+		expected_max_memory_usage,
+		expected_broken_blocks
+		);
 }
 
 int main(){
-	printf("unit tests:\n");
-	
-//	run_unit_tests();
-	
-	printf("unit tests ok\n");	
+	//run_unit_tests();
 	
 	printf("e2e tests\n");
 	test_e2e_no_seg();

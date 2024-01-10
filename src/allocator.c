@@ -139,6 +139,7 @@ void*allocate(size_t bytes, const char*file, int line){
 				mb->line = line;
 
 				alloc_stats.bytes_alloced += bytes;
+				alloc_stats.memory_usage += bytes;
 				if(alloc_stats.memory_usage > alloc_stats.max_memory_usage){
 					alloc_stats.max_memory_usage = alloc_stats.memory_usage;
 				}
