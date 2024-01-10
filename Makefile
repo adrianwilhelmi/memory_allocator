@@ -5,11 +5,11 @@ GCOV_FLAGS=-fprofile-arcs -ftest-coverage
 
 all: clean compile_tests
 
-compile_tests: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c 
-	$(CC) $(CFLAGS) $(LFLAGS) -o tests test/test.c src/allocator.c src/allocator_stats.c src/mem_block.c
+compile_tests: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
+	$(CC) $(CFLAGS) $(LFLAGS) -o tests test/test.c src/allocator.c src/allocator_stats.c src/mem_block.c test/test_unit.c
 
 compile_gcov: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c
-	$(CC) $(CFLAGS) $(GCOV_FLAGS) $(LFLAGS) -o tests test/test.c src/allocator.c src/allocator_stats.c src/mem_block.c
+	$(CC) $(CFLAGS) $(GCOV_FLAGS) $(LFLAGS) -o tests test/test.c test/test_unit.c src/allocator.c src/allocator_stats.c src/mem_block.c
 
 run_tests:
 	./tests

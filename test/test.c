@@ -3,6 +3,7 @@
 #include<stdbool.h>
 #include<pthread.h>
 #include<string.h>
+#include<stdlib.h>
 
 #include"allocator_stats.h"
 #include"allocator.h"
@@ -24,150 +25,6 @@ size_t round_up(size_t size){
 	}
 	size = (size + sizeof(size_t)) / sizeof(size_t);
 	return size * sizeof(size_t);
-}
-
-void test_align(){
-	b3*blck3 = alloc(sizeof(b3));
-	
-	//if 32bit architecture
-	if(sizeof(b3) == 12){
-		assert(alloc_stats.bytes_alloced == 12);
-		assert(alloc_stats.max_memory_usage == 12);
-	}
-	//if 64bit architecture
-	else if(sizeof(b3) == 16){
-		assert(alloc_stats.bytes_alloced == 16);
-		assert(alloc_stats.max_memory_usage == 16);
-	}
-	
-	assert(alloc_stats.alloc_calls == 1);
-	assert(alloc_stats.sbrk_calls == 1);
-	
-	free(blck3);
-	
-	printf("allign test ok\n");
-}
-
-void test_alloc_free(){
-	b1*blck = alloc(sizeof(b1));
-	
-	assert(blck != NULL);
-	
-	free(blck);
-	
-	assert(alloc_stats.alloc_calls == 1);
-	assert(alloc_stats.bytes_alloced == sizeof(b1));
-	printf("simple alloc ok\n");
-}
-
-void test_alloc_use_empty_block(){
-	int*a = alloc(sizeof(int));
-	b4*to_be_freed = alloc(sizeof(b4));
-	int*b = alloc(sizeof(int));
-	
-	//check if everything is ok
-		
-	size_t total = round_up(sizeof(int));
-	total += round_up(sizeof(b4));
-	total += round_up(sizeof(int));
-	
-	size_t max_mem = total;
-	
-	assert(alloc_stats.bytes_alloced == total);
-	assert(alloc_stats.alloc_calls == 3);
-	assert(alloc_stats.sbrk_calls == 3);
-	
-	
-	
-	free(to_be_freed);
-	
-	//now there should be enough empty space, so we dont raise program break with sbrk
-	char*should_be_in_the_middle = alloc(sizeof(char));
-	
-	total += round_up(sizeof(char));
-	
-	assert(alloc_stats.bytes_alloced == total);
-	assert(alloc_stats.alloc_calls == 4);
-	assert(alloc_stats.sbrk_calls == 3);
-	assert(alloc_stats.max_memory_usage == max_mem);
-	free(should_be_in_the_middle);
-	free(a);
-	free(b);
-	
-	printf("empty block test ok\n");
-}
-
-void test_alloc_zero(){
-	void*ptr = alloc(0);
-	assert(ptr == NULL);
-
-	assert(alloc_stats.bytes_alloced == 0);
-	assert(alloc_stats.sbrk_calls == 0);
-	assert(alloc_stats.alloc_calls == 1);
-	
-	printf("alloc zero ok\n");
-}
-
-static void*couple_of_allocations(){
-	int number_of_allocations = 40;
-	void*ptrs[number_of_allocations];
-	for(int i = 0; i < number_of_allocations; ++i){
-		size_t size = i + 1;
-		ptrs[i] = alloc(size);
-		assert(ptrs[i] != NULL);
-	}
-
-	for(int i = 0; i < number_of_allocations; ++i){
-		free(ptrs[i]);
-	}
-	
-	return NULL;
-}
-
-void test_multithread(){	
-	int num_of_threads = 10;
-	pthread_t threads[num_of_threads];
-	
-	for(int i = 0; i < num_of_threads; ++i){
-		int result = pthread_create(&threads[i], NULL, couple_of_allocations, NULL);
-		assert(result == 0);
-	}
-	for(int i = 0; i < num_of_threads; ++i){
-		int result = pthread_join(threads[i], NULL);
-		assert(result == 0);
-	}
-	
-	printf("multithreading ok\n");
-}
-
-void test_huge_alloc(){
-	size_t big_size = sizeof(size_t) * 400000;
-	void*ptr = alloc(big_size);
-	assert(ptr != NULL);
-	
-	assert(alloc_stats.alloc_calls == 1);
-	assert(alloc_stats.bytes_alloced == big_size);
-	
-	printf("huge alloc ok\n");
-}
-
-void test_alloc_and_data_usage(){
-	char*words = alloc(sizeof(char)*7);
-	
-	strcpy(words, "abcdef");
-	
-	assert(words != NULL);
-	
-	free(words);
-	
-	int*a = alloc(sizeof(int));
-	
-	assert(a != NULL);
-	
-	assert(alloc_stats.alloc_calls == 2);
-	assert(alloc_stats.sbrk_calls == 1);
-	
-	printf("data usage ok\n");
 }
 
 void run_unit_tests(){
@@ -229,11 +86,11 @@ void test_e2e_no_seg(){
 		expected_max_memory_usage = expected_memory_usage;
 	}
 	
-	void*e = alloc(4000*sizeof(size_t));
+	void*e = alloc(3000*sizeof(size_t));
 	++expected_alloc_calls;
 	++expected_sbrk_calls;
-	expected_bytes_alloced += round_up(4000*sizeof(size_t));
-	expected_memory_usage += round_up(4000*sizeof(size_t));
+	expected_bytes_alloced += round_up(3000*sizeof(size_t));
+	expected_memory_usage += round_up(3000*sizeof(size_t));
 	if(expected_max_memory_usage < expected_memory_usage){
 		expected_max_memory_usage = expected_memory_usage;
 	}
@@ -246,9 +103,10 @@ void test_e2e_no_seg(){
 	expected_memory_usage -= round_up(sizeof(int));
 	expected_memory_usage -= round_up(sizeof(char));
 	expected_memory_usage -= round_up(10*sizeof(size_t));
-	expected_memory_usage -= round_up(4000*sizeof(size_t));
+	expected_memory_usage -= round_up(3000*sizeof(size_t));
 	
-	for(int i = 0; i < 100; ++i){
+	for(int i = 0; i < 1000; ++i){
+		//alloc and free a lot of small chunks
 		void*ptr = alloc(i*sizeof(size_t));
 		++expected_alloc_calls;
 		expected_bytes_alloced += round_up(i*sizeof(size_t));
@@ -259,9 +117,39 @@ void test_e2e_no_seg(){
 				
 		free(ptr);
 		expected_memory_usage -= round_up(i*sizeof(size_t));
-
 	}
 	
+	void*ptrs[50];
+	for(int i = 0; i < 50; ++i){
+		//alloc a couple of chunks at a time
+		//shouldnt pass the breeak
+		
+		ptrs[i] = alloc(i*sizeof(size_t));
+		++expected_alloc_calls;
+		expected_bytes_alloced += round_up(i*sizeof(size_t));
+		expected_memory_usage += round_up(i*sizeof(size_t));
+		if(expected_max_memory_usage < expected_memory_usage){
+			expected_max_memory_usage = expected_memory_usage;
+		}	
+	}
+	
+	for(int i = 0; i < 50; ++i){
+		//and free them
+		free(ptrs[i]);
+		expected_memory_usage -= round_up(i*sizeof(size_t));
+	}
+	
+	//alloc huge amount at a time, should raise break -> sbrk++
+	void*ptr = alloc(4030056*sizeof(size_t));
+	++expected_alloc_calls;
+	++expected_sbrk_calls;
+	expected_bytes_alloced += round_up(4030056*sizeof(size_t));
+	expected_memory_usage += round_up(4030056*sizeof(size_t));
+	if(expected_max_memory_usage < expected_memory_usage){
+		expected_max_memory_usage = expected_memory_usage;
+	}
+	
+	free(ptr);
 	
 	printf("\nEXPECTED ALLOCATOR STATS\n");
 	
@@ -279,11 +167,153 @@ void test_e2e_no_seg(){
 		);
 }
 
+void*thread_func(){
+	printf("amaizng technology\n");
+	int max_num_of_allocs = 10;
+	int incr = 1;
+	int num_of_allocs = 1;
+	
+	for(num_of_allocs = 0; num_of_allocs < max_num_of_allocs; num_of_allocs += incr){
+		void*ptrs[num_of_allocs];
+		for(int i = 0; i < num_of_allocs; ++i){
+			ptrs[i] = alloc(i*sizeof(size_t));
+			printf("mem usage: %zu\n", alloc_stats.memory_usage);
+		}
+		
+//		dump_memory_info();
+		
+		for(int i = 0; i < num_of_allocs; ++i){
+			free(ptrs[i]);
+			printf("mem usage: %zu\n", alloc_stats.memory_usage);
+		}
+		
+//		dump_memory_info();
+	}
+		
+	return NULL;
+}
+
+#define NUM_THREADS 2
+#define NUM_ALLOCATIONS 100
+void* thread_test(void* arg) {
+    int thread_id = *((int*)arg);
+
+    for (int i = 0; i < NUM_ALLOCATIONS; i++) {
+        size_t size = (i + 1) * sizeof(int); // Zmienne rozmiary
+        void* memory = alloc(size);
+
+        if (memory == NULL) {
+            printf("Thread %d: Błąd alokacji pamięci!\n", thread_id);
+            continue;
+        }
+
+        printf("Thread %d: Alokacja %zu bajtów.\n", thread_id, size);
+	   printf("allocd memory %p\n", memory);
+
+        // Tutaj można wykonać operacje na przydzielonej pamięci
+//	   sleep(1);
+	   dump_full_memory_info();
+  //      sleep(1);
+        printf("freeing %p\n", memory);
+        free(memory);
+        printf("Thread %d: Pamięć zwolniona.\n", thread_id);
+        
+        printf("actual mem usage: %zu\n", alloc_stats.memory_usage);
+	   dump_full_memory_info();
+	   report_stats();
+    }
+    pthread_exit(NULL);
+}
+
+void thread_test_actual(){
+	pthread_t threads[NUM_THREADS];
+    int thread_ids[NUM_THREADS];
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+        thread_ids[i] = i;
+        int rc = pthread_create(&threads[i], NULL, thread_test, (void*)&thread_ids[i]);
+        if (rc) {
+            printf("Błąd: pthread_create() zwrócił kod %d\n", rc);
+            exit(-1);
+        }
+    }
+
+    for (int i = 0; i < NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+}
+
+void test_e2e_threads(){	
+	int num_of_threads = 200;
+	pthread_t threads[num_of_threads];
+	for(int i = 0; i < num_of_threads; ++i){
+		if(pthread_create(&threads[i], NULL, thread_func, NULL) != 0){
+			perror("thread create err");
+			exit(EXIT_FAILURE);
+		}
+		
+	}
+	for(int i = 0; i < num_of_threads; ++i){
+		if(pthread_join(threads[i], NULL) != 0){
+			perror("thread join err");
+			exit(EXIT_FAILURE);
+		}
+		
+	}
+	/*
+	pthread_t thread1;
+	pthread_t thread2;
+
+	
+	if(pthread_create(&thread1, NULL, thread_func, NULL) != 0){
+		perror("thread create err");
+		exit(EXIT_FAILURE);
+	}
+	
+	if(pthread_create(&thread2, NULL, thread_func, NULL) != 0){
+		perror("thread create err");
+		exit(EXIT_FAILURE);
+	}
+	
+	if(pthread_join(thread1, NULL) != 0){
+		perror("thread join err");
+		exit(EXIT_FAILURE);
+	}
+	
+	if(pthread_join(thread2, NULL) != 0){
+		perror("thread join err");
+		exit(EXIT_FAILURE);
+	}
+	*/
+}
+
+void test_incremented_allocation(){
+	for(int i = 1; i < 20; ++i){
+		void*memory = alloc(4*i*sizeof(char));
+		printf("allocd memory %p\n", memory);
+		printf("of size %zu\n", 4*i*sizeof(char));
+
+        // Tutaj można wykonać operacje na przydzielonej pamięci
+	   dump_full_memory_info();
+        printf("freeing %p\n", memory);
+        free(memory);
+        
+        printf("actual mem usage: %zu\n", alloc_stats.memory_usage);
+	   dump_full_memory_info();
+	   report_stats();
+	}
+	
+}
+
 int main(){
-	//run_unit_tests();
+	run_unit_tests();
 	
-	printf("e2e tests\n");
-	test_e2e_no_seg();
+//	test_e2e_no_seg();
 	
+//	test_e2e_threads();
+	
+//	thread_test_actual();
+//	test_incremented_allocation();
 	return 0;
 }

@@ -12,6 +12,7 @@ int is_block_valid(mem_block*mb){
 	if(mb->magic_number != magic_number){
 //		printf("UNVALID BLOCK. Raising sig fault...\n");
 //		raise(SIGSEGV);
+		printf("MAGIC NUMBER FAILURE\n");
 		return -1;
 	}
 	return 0;
@@ -36,6 +37,7 @@ mem_block*merge_blocks(mem_block*mb1, mem_block*mb2){
 	if(mb2 == heap_tail){
 		heap_tail = mb1;
 	}
+	mb1->magic_number = magic_number;
 	
 	return mb1;
 }

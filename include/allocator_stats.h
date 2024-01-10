@@ -3,6 +3,11 @@
 
 #include<stddef.h>
 
+typedef struct byte{
+	size_t amount;
+	char prefix;
+} byte;
+
 typedef struct allocator_stats{
 	size_t bytes_alloced;
 	size_t memory_usage;

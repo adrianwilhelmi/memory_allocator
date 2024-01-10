@@ -1,6 +1,8 @@
 #ifndef __TEST_H__
 #define __TEST_H__
 
+size_t round_up(size_t size);
+
 void test_alloc_free();
 void test_align();
 void test_alloc_use_empty_block();
@@ -8,6 +10,9 @@ void test_alloc_zero();
 void test_multithread();
 void test_huge_alloc();
 void test_alloc_and_data_usage();
+
+void test_e2e_no_seg();
+void test_e2e_seg();
 
 typedef struct b1{
 	//size 56
