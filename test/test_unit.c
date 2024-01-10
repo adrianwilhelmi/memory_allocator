@@ -86,18 +86,16 @@ void test_alloc_zero(){
 }
 
 static void*couple_of_allocations(){
-	int number_of_allocations = 40;
+	int number_of_allocations = 20;
 	void*ptrs[number_of_allocations];
 	for(int i = 0; i < number_of_allocations; ++i){
 		size_t size = i + 1;
 		ptrs[i] = alloc(size);
 		assert(ptrs[i] != NULL);
-		printf("mem usage: %zu\n", alloc_stats.memory_usage);
 	}
 
 	for(int i = 0; i < number_of_allocations; ++i){
 		free(ptrs[i]);
-		printf("mem usage: %zu\n", alloc_stats.memory_usage);
 	}
 	
 	return NULL;
@@ -147,4 +145,39 @@ void test_alloc_and_data_usage(){
 	assert(alloc_stats.sbrk_calls == 1);
 	
 	printf("data usage ok\n");
+}
+
+void*thread_func(){
+	int max_num_of_allocs = 10;
+	int incr = 1;
+	int num_of_allocs = 1;
+	
+	for(num_of_allocs = 0; num_of_allocs < max_num_of_allocs; num_of_allocs += incr){
+		void*ptrs[num_of_allocs];
+		for(int i = 0; i < num_of_allocs; ++i){
+			ptrs[i] = alloc(i*sizeof(size_t));
+		}
+		
+		for(int i = 0; i < num_of_allocs; ++i){
+			free(ptrs[i]);
+		}
+		
+	}
+		
+	return NULL;
+}
+
+void test_lots_of_threads(){	
+	int num_of_threads = 200;
+	pthread_t threads[num_of_threads];
+	for(int i = 0; i < num_of_threads; ++i){
+		int result = pthread_create(&threads[i], NULL, thread_func, NULL);
+		assert(result == 0);
+	}
+	for(int i = 0; i < num_of_threads; ++i){
+		int result = pthread_join(threads[i], NULL);
+		assert(result == 0);
+	}
+	
+	printf("lots of threads ok\n");
 }

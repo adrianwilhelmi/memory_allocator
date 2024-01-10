@@ -10,6 +10,7 @@ void test_alloc_zero();
 void test_multithread();
 void test_huge_alloc();
 void test_alloc_and_data_usage();
+void test_lots_of_threads();
 
 void test_e2e_no_seg();
 void test_e2e_seg();

@@ -84,7 +84,6 @@ void*allocate(size_t bytes, const char*file, int line){
 	//returns pointer to existing free memory block, or raises the program break if no free block is found
 	
 	pthread_mutex_lock(&allocator_mutex);
-	printf("mutex on\n");
 	
 	alloc_stats.alloc_calls += 1;
 	
@@ -117,7 +116,6 @@ void*allocate(size_t bytes, const char*file, int line){
 					
 					bool is_tail = false;
 					if(mb == heap_tail){
-						printf("is heap tail\n");
 						is_tail = true;
 					}
 					
@@ -154,7 +152,6 @@ void*allocate(size_t bytes, const char*file, int line){
 					alloc_stats.max_memory_usage = alloc_stats.memory_usage;
 				}
 				
-				printf("mutex off\n");
 				pthread_mutex_unlock(&allocator_mutex);
 								
 				return mb + 1;
@@ -174,7 +171,6 @@ void*allocate(size_t bytes, const char*file, int line){
 		alloc_stats.max_memory_usage = alloc_stats.memory_usage;
 	}
 	
-	printf("mutex off\n");
 	pthread_mutex_unlock(&allocator_mutex);
 	
 	return mb + 1;
@@ -186,6 +182,7 @@ void my_free(void*addr){
 	//memory block is now again available for alloation
 	
 	pthread_mutex_lock(&allocator_mutex);
+//	printf("my free\n");
 	
 	if(addr == NULL){
 		//do nothing if got null pointer
