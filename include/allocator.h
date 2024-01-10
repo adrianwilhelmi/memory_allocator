@@ -23,5 +23,6 @@ void*allocate(size_t bytes, const char*file, int line);
 void my_free(void*addr);
 void free_all();
 void dump_memory_info();
+void dump_full_memory_info();
 
 #endif

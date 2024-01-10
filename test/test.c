@@ -187,6 +187,9 @@ void test_e2e_no_seg(){
 	dump_memory_info();
 	
 	free(ptr1);
+	
+	dump_memory_info();
+	
 	free(ptr4);
 	
 	dump_memory_info();
@@ -199,16 +202,23 @@ void test_e2e_no_seg(){
 	
 	dump_memory_info();
 	
-	void*ptr6 = alloc(135*sizeof(size_t));
+	printf("here b4 crash1\n");
+	void*ptr6 = alloc(20*sizeof(size_t));
+	for(int i = 0; i < 100; ++i){
+		free(ptr6);
+		printf("i: %d\n", i);
+		ptr6 = alloc(i*sizeof(size_t));
+	}
 	
 	dump_memory_info();
 	
 	free(ptr6);
+	
+	dump_memory_info();
+	
 }
 
-int main(){
-	printf("unit tests:\n");
-	/*
+void run_unit_tests(){
 	int number_of_tests = sizeof(tests) / sizeof(tests[0]);
 	for(int i = 0; i < number_of_tests; ++i){
 		printf("%d ", i+1);
@@ -216,12 +226,17 @@ int main(){
 		free_all();
 		clean_stats(&alloc_stats);
 	}
-	*/
+}
+
+int main(){
+	printf("unit tests:\n");
+	
+//	run_unit_tests();
+	
 	printf("unit tests ok\n");	
 	
 	printf("e2e tests\n");
 	test_e2e_no_seg();
-	
 	
 	return 0;
 }

@@ -16,6 +16,7 @@ typedef struct mem_block{
 	bool is_free;
 } mem_block;
 
-void check_block(mem_block*mb);
+int is_block_valid(mem_block*mb);
+mem_block*merge_blocks(mem_block*mb1, mem_block*mb2);
 
 #endif
