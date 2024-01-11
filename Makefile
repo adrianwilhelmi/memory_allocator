@@ -11,11 +11,13 @@ compile_tests: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c
 compile_gcov: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c
 	$(CC) $(CFLAGS) $(GCOV_FLAGS) $(LFLAGS) -o tests test/test.c test/test_unit.c src/allocator.c src/allocator_stats.c src/mem_block.c
 
+run_scripted_tests:
+	@cd test/scripted && ./test_scripted.sh
+
 run_tests:
 	./tests
-
-test: compile_tests run_tests
-
+	@make run_scripted_tests
+	
 run_tests_valgrind:
 	valgrind $(VALGRIND_FLAGS) ./tests
 
@@ -27,6 +29,8 @@ run_gcov:
 	cd src && rm *.gcda
 	cd src && rm *.gcno
 	cd src && rm *.gcov
+
+test: compile_tests run_tests
 	
 gcov: compile_gcov run_gcov
 	rm gcov_tests
@@ -34,6 +38,7 @@ gcov: compile_gcov run_gcov
 regression:
 	make clean
 	make compile_gcov
+	make run_scripted_tests
 	make run_gcov
 	make run_tests_valgrind
 	make clean

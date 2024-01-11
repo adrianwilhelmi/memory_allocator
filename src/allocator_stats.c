@@ -43,8 +43,6 @@ void report_stats(){
 		}
 		break;
 	}
-	
-	
 }
 
 void clean_stats(allocator_stats*stats){

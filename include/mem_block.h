@@ -19,5 +19,7 @@ typedef struct mem_block{
 
 int is_block_valid(mem_block*mb);
 mem_block*merge_blocks(mem_block*mb1, mem_block*mb2);
+void invalid_block_message(char*cause, char*consequence);
+void dump_full_memory_info();
 
 #endif

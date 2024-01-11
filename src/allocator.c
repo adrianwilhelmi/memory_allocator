@@ -102,10 +102,10 @@ void*allocate(size_t bytes, const char*file, int line){
 		for(mb = heap_head; mb; mb = mb->next){
 			if(mb->is_free && mb->size >= bytes){
 				if(is_block_valid(mb) == -1){
-					printf("invalid in searching\n");
-					printf("INVALID BLOCK. Raising sig fault...\n");
+					invalid_block_message("magic number failure", "Raising seg fault...");
 					pthread_mutex_unlock(&allocator_mutex);
 					raise(SIGSEGV);
+					return NULL;
 				}
 				
 				if((mb->true_size > bytes + sizeof(mem_block) + sizeof(size_t))){
@@ -202,35 +202,34 @@ void my_free(void*addr){
 	}
 	
 	if(mb != to_free){
-		printf("No such block\n");
-		printf("UNVALID BLOCK. Raising sig fault...\n");
+		invalid_block_message("no such block", "Raising seg fault...");
 		pthread_mutex_unlock(&allocator_mutex);
 		raise(SIGSEGV);
+		//if sigsegv is ignored then just return
+		return;
 	}
 	if(to_free->is_free){
-		printf("double free\n");
-		printf("UNVALID BLOCK. Raising sig fault...\n");
+		invalid_block_message("double free", "Raising seg fault...");
 		pthread_mutex_unlock(&allocator_mutex);
 		raise(SIGSEGV);
+		return;
 	}
 	if(is_block_valid(to_free) == -1){
-		printf("UNVALID BLOCK. Raising sig fault...\n");
+		invalid_block_message("magic number failure", "Raising seg fault...");
 		pthread_mutex_unlock(&allocator_mutex);
 		raise(SIGSEGV);
+		return;
 	}
 
 	to_free->is_free = true;
 
-	long long mem_usage = alloc_stats.memory_usage;
-	alloc_stats.memory_usage -= to_free->size;
-	
-	
-	if(mem_usage - (int)to_free->size < 0){
+	if((long long) alloc_stats.memory_usage - (long long)to_free->size < 0){
 		printf("ALLOC STATS: mem usage < 0\n");
 		pthread_mutex_unlock(&allocator_mutex);
 		raise(SIGSEGV);
+		return;
 	}
-	
+	alloc_stats.memory_usage -= to_free->size;
 	
 	//merge neighbor free blocks
 	//next block
@@ -318,46 +317,5 @@ void dump_memory_info(){
 	}
 	printf("\n");
 	
-	pthread_mutex_unlock(&allocator_mutex);
-}
-
-void dump_full_memory_info(){
-	//prints information about every memory block
-	
-	pthread_mutex_lock(&allocator_mutex);
-	if(heap_head == NULL){
-		printf("no memory allocated\n");
-		pthread_mutex_unlock(&allocator_mutex);
-		return;
-	}
-	
-	printf("%-12s %-12s %-22s %-22s %-20s %-12s %-12s", "block_id", "size", "start", "end", "line", "file", "is_free");
-	printf("\n");
-	
-	mem_block*mb;
-	for(mb = heap_head; mb; mb = mb->next){
-		printf("%-12d %-12zu %-22p %-22p %-20d %-12s %-12d\n",
-			mb->block_id,
-			mb->size,
-			(void*)((uintptr_t)mb + sizeof(mem_block)),
-			(void*)((uintptr_t)mb + sizeof(mem_block) + mb->size),
-			mb->file ? mb->line : -1,
-			mb->file ? mb->file : "unknown file",
-			mb->is_free
-			);
-	}
-	printf("\n");
-	
-	printf("heap tail:\n");	
-	printf("%-12d %-12zu %-22p %-22p %-20d %-12s\n",
-		heap_tail->block_id,
-		heap_tail->size,
-		(void*)((uintptr_t)heap_tail + sizeof(mem_block)),
-		(void*)((uintptr_t)heap_tail + sizeof(mem_block) + heap_tail->size),
-		heap_tail->file ? heap_tail->line : -1,
-		heap_tail->file ? heap_tail->file : "unknown file"
-		);
-	printf("\n");
-
 	pthread_mutex_unlock(&allocator_mutex);
 }

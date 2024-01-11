@@ -5,6 +5,7 @@
 #include<string.h>
 #include<stdlib.h>
 #include<fcntl.h>
+#include<signal.h>
 
 #include"allocator_stats.h"
 #include"allocator.h"
@@ -44,16 +45,17 @@ void run_unit_tests(){
 }
 
 void test_e2e_no_seg(){
-	//redirect output to a file
 	int fd_out;
 	int fd_err;
+	int fd_terminal_out = dup(STDOUT_FILENO);
+	int fd_terminal_err = dup(STDERR_FILENO);
 	
-	if((fd_out = open("test/e2e_results/e2e_result1.txt", O_TRUNC | O_WRONLY | O_CREAT, 0644)) == -1){
-		perror("err opening file");
+	if((fd_out = open("test/scripted/results/e2e_result1.txt", O_TRUNC | O_WRONLY | O_CREAT, 0644)) == -1){
+		perror("err opening file1");
 		exit(EXIT_FAILURE);
 	}
-	if((fd_err = open("test/e2e_results/e2e_err1.txt", O_TRUNC | O_WRONLY | O_CREAT, 0644)) == -1){
-		perror("err opening file");
+	if((fd_err = open("test/scripted/results/e2e_err1.txt", O_TRUNC | O_WRONLY | O_CREAT, 0644)) == -1){
+		perror("err opening file2");
 		exit(EXIT_FAILURE);
 	}
 	
@@ -199,6 +201,91 @@ void test_e2e_no_seg(){
 	
 	close(fd_out);
 	close(fd_err);
+	
+	if(dup2(fd_terminal_out, STDOUT_FILENO) == -1){
+		perror("dup2 restore err");
+		exit(EXIT_FAILURE);
+	}
+	if(dup2(fd_terminal_err, STDERR_FILENO) == -1){
+		perror("dup2 restore err");
+		exit(EXIT_FAILURE);
+	}
+	
+	close(fd_terminal_out);
+	close(fd_terminal_err);
+}
+
+void test_e2e_seg(){
+	int fd_out;
+	int fd_err;
+	int fd_terminal_out = dup(STDOUT_FILENO);
+	int fd_terminal_err = dup(STDERR_FILENO);
+	
+	if((fd_out = open("test/scripted/results/e2e_result2.txt", O_TRUNC | O_WRONLY | O_CREAT, 0644)) == -1){
+		perror("err opening file");
+		exit(EXIT_FAILURE);
+	}
+	if((fd_err = open("test/scripted/results/e2e_err2.txt", O_TRUNC | O_WRONLY | O_CREAT, 0644)) == -1){
+		perror("err opening file");
+		exit(EXIT_FAILURE);
+	}
+	
+	if(dup2(fd_out, STDOUT_FILENO) == -1){
+		perror("dup2 out err");
+		exit(EXIT_FAILURE);
+	}
+	
+	if(dup2(fd_err, STDERR_FILENO) == -1){
+		perror("dup2 err");
+		exit(EXIT_FAILURE);
+	}
+	
+	signal(SIGSEGV, SIG_IGN);
+	
+	void*a = alloc(sizeof(size_t));
+	
+	free(a);
+	//double free shuld raise seg fault
+	printf("expected ");
+	invalid_block_message("double free", "Raising seg fault...");
+	printf("actual ");
+	free(a);
+	
+	
+	//freeing random block should raise seg fault
+	printf("expected ");
+	invalid_block_message("no such block", "Raising seg fault...");
+	printf("actual ");
+	free((int*)(0x5555A));
+	
+	
+	//overwriting memory where block metadata is should raise seg fault (overwriting magic number)
+	printf("expected ");
+	invalid_block_message("magic number failure", "Raising seg fault...");
+	printf("actual ");
+	void*ptr = alloc(sizeof(size_t));
+	char*illegal = ((char*)ptr) - sizeof(mem_block); //illegal should point at the beggining of the metadata
+	memset(illegal, 0, sizeof(mem_block));
+	//now freeing ptr should raise segmentation fault since its magic number is overwritten
+	free(ptr);
+	
+	close(fd_out);
+	close(fd_err);
+	
+	if(dup2(fd_terminal_out, STDOUT_FILENO) == -1){
+		perror("dup2 restore err");
+		exit(EXIT_FAILURE);
+	}
+	if(dup2(fd_terminal_err, STDERR_FILENO) == -1){
+		perror("dup2 restore err");
+		exit(EXIT_FAILURE);
+	}
+	
+	close(fd_terminal_out);
+	close(fd_terminal_err);
+	
+	clean_stats(&alloc_stats);
+	free_all();
 }
 
 int main(){
@@ -207,6 +294,7 @@ int main(){
 	run_unit_tests();
 	
 	test_e2e_no_seg();
+	test_e2e_seg();
 	
 	return 0;
 }
