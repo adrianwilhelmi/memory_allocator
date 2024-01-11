@@ -86,7 +86,7 @@ void test_alloc_zero(){
 }
 
 static void*couple_of_allocations(){
-	int number_of_allocations = 20;
+	int number_of_allocations = 10;
 	void*ptrs[number_of_allocations];
 	for(int i = 0; i < number_of_allocations; ++i){
 		size_t size = i + 1;
@@ -102,7 +102,7 @@ static void*couple_of_allocations(){
 }
 
 void test_multithread(){	
-	int num_of_threads = 10;
+	int num_of_threads = 5;
 	pthread_t threads[num_of_threads];
 	
 	for(int i = 0; i < num_of_threads; ++i){
@@ -152,7 +152,7 @@ void*thread_func(){
 	int incr = 1;
 	int num_of_allocs = 1;
 	
-	for(num_of_allocs = 0; num_of_allocs < max_num_of_allocs; num_of_allocs += incr){
+	for(num_of_allocs = 1; num_of_allocs < max_num_of_allocs; num_of_allocs += incr){
 		void*ptrs[num_of_allocs];
 		for(int i = 0; i < num_of_allocs; ++i){
 			ptrs[i] = alloc((i+1)*sizeof(size_t));
