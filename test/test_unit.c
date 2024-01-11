@@ -181,3 +181,20 @@ void test_lots_of_threads(){
 	
 	printf("lots of threads ok\n");
 }
+
+void test_increment_alloc(){
+	for(int i = 1; i < 20; ++i){
+		char*memory = alloc(4*i*sizeof(char));
+		/*
+		printf("alloced memory at %p\n", memory);
+		printf("of size %zu\n", i*4*sizeof(char));		
+		dump_full_memory_info();
+		printf("freeing %p\n", memory);
+		*/
+		free(memory);
+		
+		//dump_full_memory_info();
+	}	
+	
+	printf("increment ok\n");
+}

@@ -57,6 +57,7 @@ static mem_block*get_new_memory_block(size_t size){
 		return NULL;
 	}
 	
+	new_block->true_size = size;
 	new_block->size = size;
 	new_block->is_free = false;
 	new_block->next = NULL;
@@ -92,7 +93,6 @@ void*allocate(size_t bytes, const char*file, int line){
 		return NULL;
 	}
 	
-	
 	bytes = align(bytes);
 	
 	mem_block*mb;
@@ -108,11 +108,12 @@ void*allocate(size_t bytes, const char*file, int line){
 					raise(SIGSEGV);
 				}
 				
-				if((mb->size > bytes + sizeof(mem_block) + sizeof(size_t))){
+				if((mb->true_size > bytes + sizeof(mem_block) + sizeof(size_t))){
 					//enough memory to chop the block into 2 smaller blocks
 					size_t new_block_size = mb->size - bytes - sizeof(mem_block);
 					mb->is_free = false;
 					mb->size = bytes;
+					mb->true_size = bytes;
 					
 					bool is_tail = false;
 					if(mb == heap_tail){
@@ -122,6 +123,7 @@ void*allocate(size_t bytes, const char*file, int line){
 					mem_block*new_block = (mem_block*)((uintptr_t)(mb + 1) + bytes);
 					new_block->is_free = true;
 					new_block->size = new_block_size;
+					new_block->true_size = new_block_size;
 					new_block->magic_number = magic_number;
 					new_block->block_id = global_block_id++;
 					new_block->file = file;
@@ -182,7 +184,6 @@ void my_free(void*addr){
 	//memory block is now again available for alloation
 	
 	pthread_mutex_lock(&allocator_mutex);
-//	printf("my free\n");
 	
 	if(addr == NULL){
 		//do nothing if got null pointer
@@ -204,23 +205,17 @@ void my_free(void*addr){
 		printf("No such block\n");
 		printf("UNVALID BLOCK. Raising sig fault...\n");
 		pthread_mutex_unlock(&allocator_mutex);
-		//return;
-		
 		raise(SIGSEGV);
 	}
 	if(to_free->is_free){
 		printf("double free\n");
 		printf("UNVALID BLOCK. Raising sig fault...\n");
 		pthread_mutex_unlock(&allocator_mutex);
-		//return;
-		
 		raise(SIGSEGV);
 	}
 	if(is_block_valid(to_free) == -1){
 		printf("UNVALID BLOCK. Raising sig fault...\n");
 		pthread_mutex_unlock(&allocator_mutex);
-		//return;
-		
 		raise(SIGSEGV);
 	}
 
@@ -341,7 +336,6 @@ void dump_full_memory_info(){
 	
 	mem_block*mb;
 	for(mb = heap_head; mb; mb = mb->next){
-		printf("hey\n");
 		printf("%-12d %-12zu %-22p %-22p %-20d %-12s %-12d\n",
 			mb->block_id,
 			mb->size,

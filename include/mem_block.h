@@ -10,6 +10,7 @@ typedef struct mem_block{
 	struct mem_block*next;
 	const char*file;
 	size_t size;
+	size_t true_size;
 	unsigned int magic_number;
 	int line;
 	unsigned int block_id;

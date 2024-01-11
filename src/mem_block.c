@@ -32,7 +32,8 @@ mem_block*merge_blocks(mem_block*mb1, mem_block*mb2){
 		return mb1;
 	}
 	
-	mb1->size += mb2->size + sizeof(mem_block);
+	mb1->true_size += mb2->true_size + sizeof(mem_block);
+	mb1->size = mb1->true_size;
 	mb1->next = mb2->next;
 	if(mb2 == heap_tail){
 		heap_tail = mb1;

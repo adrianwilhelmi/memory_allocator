@@ -1,0 +1,7 @@
+EXPECTED ALLOCATOR STATS
+alloc_calls  sbrk_calls   total_bytes_alloced    mean_bytes_alloced     max_memory_usage     broken_blocks 
+1056         5            4352456                4121                   322400               0            
+
+ALLOCATOR STATS
+alloc_calls  sbrk_calls   total_bytes_alloced    mean_bytes_alloced     max_memory_usage     broken_blocks 
+1056         5            4352456                4121                   322400               0            

@@ -4,6 +4,7 @@
 #include<pthread.h>
 #include<string.h>
 #include<stdlib.h>
+#include<fcntl.h>
 
 #include"allocator_stats.h"
 #include"allocator.h"
@@ -18,6 +19,7 @@ void(*tests[])() = {
 	test_huge_alloc,
 	test_alloc_and_data_usage,
 //	test_lots_of_threads		//SHOULDNT BE RUN WITH VALGRIND
+	test_increment_alloc
 };
 
 size_t round_up(size_t size){
@@ -38,10 +40,34 @@ void run_unit_tests(){
 		free_all();
 		clean_stats(&alloc_stats);
 	}
-	printf("UNIT TESTS Ok.\n\n");
+	printf("UNIT TESTS Ok.\n");
 }
 
 void test_e2e_no_seg(){
+	//redirect output to a file
+	int fd_out;
+	int fd_err;
+	
+	if((fd_out = open("test/e2e_results/e2e_result1.txt", O_TRUNC | O_WRONLY | O_CREAT, 0644)) == -1){
+		perror("err opening file");
+		exit(EXIT_FAILURE);
+	}
+	if((fd_err = open("test/e2e_results/e2e_err1.txt", O_TRUNC | O_WRONLY | O_CREAT, 0644)) == -1){
+		perror("err opening file");
+		exit(EXIT_FAILURE);
+	}
+	
+	if(dup2(fd_out, STDOUT_FILENO) == -1){
+		perror("dup2 out err");
+		exit(EXIT_FAILURE);
+	}
+	
+	if(dup2(fd_err, STDERR_FILENO) == -1){
+		perror("dup2 err");
+		exit(EXIT_FAILURE);
+	}
+	
+	
 	size_t expected_bytes_alloced = 0;
 	size_t expected_memory_usage = 0;
 	size_t expected_max_memory_usage = 0;
@@ -152,7 +178,7 @@ void test_e2e_no_seg(){
 	
 	free(ptr);
 	
-	printf("\nEXPECTED ALLOCATOR STATS\n");
+	printf("EXPECTED ALLOCATOR STATS\n");
 	
 	printf("%-12s %-12s %-22s %-22s %-20s %-12s \n", "alloc_calls", "sbrk_calls", "total_bytes_alloced",
 		"mean_bytes_alloced", "max_memory_usage", "broken_blocks"
@@ -169,9 +195,11 @@ void test_e2e_no_seg(){
 		
 	report_stats();
 	free_all();
+	clean_stats(&alloc_stats);
+	
+	close(fd_out);
+	close(fd_err);
 }
-
-
 
 int main(){
 	initialize_allocator();
