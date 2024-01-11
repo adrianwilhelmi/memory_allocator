@@ -18,6 +18,7 @@ compile_xanalyzer: src/allocator.c src/allocator_stats.c src/mem_block.c
 	clang $(XANALYZER_FLAGS) $(LFLAGS) src/allocator.c
 	clang $(XANALYZER_FLAGS) $(LFLAGS) src/allocator_stats.c
 	clang $(XANALYZER_FLAGS) $(LFLAGS) src/mem_block.c
+	make clean
 	
 compile_sanitizer: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
 	clang -fsanitize=address $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
@@ -46,12 +47,11 @@ compile_sanitizer: src/allocator.c src/allocator_stats.c src/mem_block.c test/te
 	
 	clang -fsanitize=safe-stack $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
 	./a.out
-	rm a.out
-	
+	make clean
 	
 compile_full_analyze:
 	make compile_xanalyzer
-	make clean
+	make compile_sanitizer
 	scan-build $(SCANBUILD_FLAGS) make compile_gcov
 
 run_scripted_tests:
