@@ -7,7 +7,6 @@
 #include<fcntl.h>
 #include<signal.h>
 
-#include"allocator_stats.h"
 #include"allocator.h"
 #include"test.h"
 
@@ -50,23 +49,23 @@ void test_e2e_no_seg(){
 	int fd_terminal_out = dup(STDOUT_FILENO);
 	int fd_terminal_err = dup(STDERR_FILENO);
 	
-	if((fd_out = open("test/scripted/results/e2e_result1.txt", O_TRUNC | O_WRONLY | O_CREAT, 0644)) == -1){
+	if((fd_out = open("test/scripted/results/e2e_result1.txt", O_TRUNC | O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO)) == -1){
 		perror("err opening file1");
-		exit(EXIT_FAILURE);
+		return;
 	}
-	if((fd_err = open("test/scripted/results/e2e_err1.txt", O_TRUNC | O_WRONLY | O_CREAT, 0644)) == -1){
+	if((fd_err = open("test/scripted/results/e2e_err1.txt", O_TRUNC | O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO)) == -1){
 		perror("err opening file2");
-		exit(EXIT_FAILURE);
+		return;
 	}
 	
 	if(dup2(fd_out, STDOUT_FILENO) == -1){
 		perror("dup2 out err");
-		exit(EXIT_FAILURE);
+		return;
 	}
 	
 	if(dup2(fd_err, STDERR_FILENO) == -1){
 		perror("dup2 err");
-		exit(EXIT_FAILURE);
+		return;
 	}
 	
 	
@@ -204,11 +203,11 @@ void test_e2e_no_seg(){
 	
 	if(dup2(fd_terminal_out, STDOUT_FILENO) == -1){
 		perror("dup2 restore err");
-		exit(EXIT_FAILURE);
+		return;
 	}
 	if(dup2(fd_terminal_err, STDERR_FILENO) == -1){
 		perror("dup2 restore err");
-		exit(EXIT_FAILURE);
+		return;
 	}
 	
 	close(fd_terminal_out);
@@ -221,23 +220,23 @@ void test_e2e_seg(){
 	int fd_terminal_out = dup(STDOUT_FILENO);
 	int fd_terminal_err = dup(STDERR_FILENO);
 	
-	if((fd_out = open("test/scripted/results/e2e_result2.txt", O_TRUNC | O_WRONLY | O_CREAT, 0644)) == -1){
+	if((fd_out = open("test/scripted/results/e2e_result2.txt", O_TRUNC | O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO)) == -1){
 		perror("err opening file");
-		exit(EXIT_FAILURE);
+		return;
 	}
-	if((fd_err = open("test/scripted/results/e2e_err2.txt", O_TRUNC | O_WRONLY | O_CREAT, 0644)) == -1){
+	if((fd_err = open("test/scripted/results/e2e_err2.txt", O_TRUNC | O_WRONLY | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO)) == -1){
 		perror("err opening file");
-		exit(EXIT_FAILURE);
+		return;
 	}
 	
 	if(dup2(fd_out, STDOUT_FILENO) == -1){
 		perror("dup2 out err");
-		exit(EXIT_FAILURE);
+		return;
 	}
 	
 	if(dup2(fd_err, STDERR_FILENO) == -1){
 		perror("dup2 err");
-		exit(EXIT_FAILURE);
+		return;
 	}
 	
 	signal(SIGSEGV, SIG_IGN);
@@ -274,18 +273,19 @@ void test_e2e_seg(){
 	
 	if(dup2(fd_terminal_out, STDOUT_FILENO) == -1){
 		perror("dup2 restore err");
-		exit(EXIT_FAILURE);
+		return;
 	}
 	if(dup2(fd_terminal_err, STDERR_FILENO) == -1){
 		perror("dup2 restore err");
-		exit(EXIT_FAILURE);
+		return;
 	}
 	
 	close(fd_terminal_out);
 	close(fd_terminal_err);
 	
 	clean_stats(&alloc_stats);
-	free_all();
+	
+	signal(SIGSEGV, SIG_DFL);
 }
 
 int main(){

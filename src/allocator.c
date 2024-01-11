@@ -12,7 +12,6 @@ mem_block*heap_tail = NULL;
 bool was_initialized = 0;
 pthread_mutex_t allocator_mutex;
 allocator_stats alloc_stats;
-static unsigned int global_block_id = 0;
 
 void initialize_allocator(){
 	//initializes the mutex and sets up free_all as function to be called at exit
@@ -20,12 +19,18 @@ void initialize_allocator(){
 	
 	if(pthread_mutex_init(&allocator_mutex, NULL) != 0){
 		perror("err initializing mutex");
-		exit(EXIT_FAILURE);
+		return;
 	}
 	
 	//first report stats about unfreed blocks and then free them
-	atexit(free_all);
-	atexit(report_stats);
+	if(atexit(free_all) != 0){
+		perror("couldnt register function at exit\n");
+		return;
+	}
+	if(atexit(report_stats) != 0){
+		perror("couldnt register function at exit\n");
+		return;
+	}
 	
 	was_initialized = 1;
 	printf("allocator initialized\n");
@@ -39,46 +44,6 @@ static size_t align(size_t size){
 		return size;
 	}
 	return size + sizeof(size_t) - remainder;
-}
-
-static mem_block*get_new_memory_block(size_t size){
-	//allocates size bytes of memory + memory for metadata by raising the program break with sbrk()
-	
-	alloc_stats.sbrk_calls += 1;
-	
-	//calculate total size
-	size_t total_size = size + sizeof(mem_block);
-	
-	mem_block*new_block = (mem_block*)sbrk(0);
-	
-	//null if out of memory
-	if(sbrk(total_size) == (void*)(-1)){
-		perror("out of memory");
-		return NULL;
-	}
-	
-	new_block->true_size = size;
-	new_block->size = size;
-	new_block->is_free = false;
-	new_block->next = NULL;
-	new_block->magic_number = magic_number;
-	new_block->block_id = global_block_id++;
-	
-	//initialize global vars if its first allocated block
-	if(heap_head == NULL){
-		if(!was_initialized){
-			initialize_allocator();
-		}
-		heap_head = new_block;
-		heap_tail = new_block;
-	}
-	else{
-		heap_tail->next = new_block;
-		heap_tail = heap_tail->next;
-		heap_tail->next = NULL;
-	}
-	
-	return new_block;
 }
 
 void*allocate(size_t bytes, const char*file, int line){
@@ -95,87 +60,41 @@ void*allocate(size_t bytes, const char*file, int line){
 	
 	bytes = align(bytes);
 	
-	mem_block*mb;
-	
 	//search for free memory in previously allocated blocks
-	if(heap_head != NULL){
-		for(mb = heap_head; mb; mb = mb->next){
-			if(mb->is_free && mb->size >= bytes){
-				if(is_block_valid(mb) == -1){
-					invalid_block_message("magic number failure", "Raising seg fault...");
-					pthread_mutex_unlock(&allocator_mutex);
-					raise(SIGSEGV);
-					return NULL;
-				}
-				
-				if((mb->true_size > bytes + sizeof(mem_block) + sizeof(size_t))){
-					//enough memory to chop the block into 2 smaller blocks
-					size_t new_block_size = mb->size - bytes - sizeof(mem_block);
-					mb->is_free = false;
-					mb->size = bytes;
-					mb->true_size = bytes;
-					
-					bool is_tail = false;
-					if(mb == heap_tail){
-						is_tail = true;
-					}
-					
-					mem_block*new_block = (mem_block*)((uintptr_t)(mb + 1) + bytes);
-					new_block->is_free = true;
-					new_block->size = new_block_size;
-					new_block->true_size = new_block_size;
-					new_block->magic_number = magic_number;
-					new_block->block_id = global_block_id++;
-					new_block->file = file;
-					new_block->line = line;
-					
-					new_block->next = mb->next;
-					if(is_tail){
-						heap_tail = new_block;
-					}
-					
-					mb->next = new_block;					
-					mb->magic_number = magic_number;
-
-				}
-				else{
-					mb->is_free = false;
-					
-					//WRONG
-					mb->size = bytes;
-				}
-
-				mb->file = file;
-				mb->line = line;
-
-				alloc_stats.bytes_alloced += bytes;
-				alloc_stats.memory_usage += bytes;
-				if(alloc_stats.memory_usage > alloc_stats.max_memory_usage){
-					alloc_stats.max_memory_usage = alloc_stats.memory_usage;
-				}
-				
-				pthread_mutex_unlock(&allocator_mutex);
-								
-				return mb + 1;
+	void*addr = search_first_fit(bytes, file, line);
+	if(addr != NULL){
+		pthread_mutex_unlock(&allocator_mutex);
+		return addr;
+	}
+	
+	//get new memory block if no available memory found
+	mem_block*new_block = get_new_memory_block(bytes);
+	
+	//initialize global vars if its first allocated block
+	if(heap_head == NULL){
+		if(!was_initialized){
+			initialize_allocator();
+			if(!was_initialized){
+				return NULL;
 			}
 		}
+		heap_head = new_block;
+		heap_tail = new_block;
+	}
+	else{
+		heap_tail->next = new_block;
+		heap_tail = heap_tail->next;
+		heap_tail->next = NULL;
 	}
 
-	//get new memory block if no available memory found
-	mb = get_new_memory_block(bytes);
-
-	mb->file = file;
-	mb->line = line;
+	new_block->file = file;
+	new_block->line = line;
 	
-	alloc_stats.bytes_alloced += bytes;
-	alloc_stats.memory_usage += bytes;
-	if(alloc_stats.memory_usage > alloc_stats.max_memory_usage){
-		alloc_stats.max_memory_usage = alloc_stats.memory_usage;
-	}
+	update_stats_add(bytes);
 	
 	pthread_mutex_unlock(&allocator_mutex);
 	
-	return mb + 1;
+	return new_block + 1;
 }
 
 void my_free(void*addr){
@@ -194,30 +113,36 @@ void my_free(void*addr){
 	mem_block*to_free = (mem_block*)addr - 1;
 	
 	//check if addr is a valid address (allocated by this allocator)
-	mem_block*mb;
-	for(mb = heap_head; mb; mb = mb->next){
-		if(mb == to_free){
+	mem_block*mblock;
+	for(mblock = heap_head; mblock; mblock = mblock->next){
+		if(mblock == to_free){
 			break;
 		}
 	}
 	
-	if(mb != to_free){
+	if(mblock != to_free){
 		invalid_block_message("no such block", "Raising seg fault...");
 		pthread_mutex_unlock(&allocator_mutex);
-		raise(SIGSEGV);
+		if(raise(SIGSEGV) != 0){
+			printf("err raising sigsegv\n");
+		}
 		//if sigsegv is ignored then just return
 		return;
 	}
 	if(to_free->is_free){
 		invalid_block_message("double free", "Raising seg fault...");
 		pthread_mutex_unlock(&allocator_mutex);
-		raise(SIGSEGV);
+		if(raise(SIGSEGV) != 0){
+			printf("err raising sigsegv\n");
+		}
 		return;
 	}
 	if(is_block_valid(to_free) == -1){
 		invalid_block_message("magic number failure", "Raising seg fault...");
 		pthread_mutex_unlock(&allocator_mutex);
-		raise(SIGSEGV);
+		if(raise(SIGSEGV) != 0){
+			printf("err raising sigsegv\n");
+		}
 		return;
 	}
 
@@ -226,7 +151,9 @@ void my_free(void*addr){
 	if((long long) alloc_stats.memory_usage - (long long)to_free->size < 0){
 		printf("ALLOC STATS: mem usage < 0\n");
 		pthread_mutex_unlock(&allocator_mutex);
-		raise(SIGSEGV);
+		if(raise(SIGSEGV) != 0){
+			printf("err raising sigsegv\n");
+		}
 		return;
 	}
 	alloc_stats.memory_usage -= to_free->size;
@@ -234,16 +161,16 @@ void my_free(void*addr){
 	//merge neighbor free blocks
 	//next block
 	if(to_free != heap_tail && to_free->next->is_free){
-		to_free = merge_blocks(to_free, to_free->next);
+		merge_blocks(to_free, to_free->next);
 	}
 	//prev block
-	mb = heap_head;
-	if(mb != heap_tail){
-		while(mb->next && mb->next != to_free){
-			mb = mb->next;
+	mblock = heap_head;
+	if(mblock != heap_tail){
+		while(mblock->next && mblock->next != to_free){
+			mblock = mblock->next;
 		}
-		if(mb->next == to_free && mb->is_free){
-			mb = merge_blocks(mb, to_free);
+		if(mblock->next == to_free && mblock->is_free){
+			merge_blocks(mblock, to_free);
 		}
 	}
 	
@@ -257,10 +184,15 @@ void free_all(){
 	
 	pthread_mutex_lock(&allocator_mutex);
 	
+	if(heap_head == NULL){
+		pthread_mutex_unlock(&allocator_mutex);
+		return;
+	}
+	
 	if(brk(heap_head) == -1){
 		perror("err freeing mem");
 		pthread_mutex_unlock(&allocator_mutex);
-		exit(EXIT_FAILURE);
+		return;
 	}
 	
 	alloc_stats.memory_usage = 0;
@@ -283,14 +215,13 @@ void dump_memory_info(){
 	}
 	
 	int allocated_exists = 0;
-	mem_block*mb;
-	for(mb = heap_head; mb; mb = mb->next){
-		if(mb->is_free){
+	mem_block*mblock;
+	for(mblock = heap_head; mblock; mblock = mblock->next){
+		if(mblock->is_free){
 			continue;
-		}else{
-			allocated_exists = 1;
-			break;
 		}
+		allocated_exists = 1;
+		break;
 	}
 	
 	if(allocated_exists == 0){
@@ -302,17 +233,17 @@ void dump_memory_info(){
 	printf("%-12s %-12s %-22s %-22s %-20s %-12s", "block_id", "size", "start", "end", "line", "file");
 	printf("\n");
 	
-	for(mb = heap_head; mb; mb = mb->next){
-		if(mb->is_free){
+	for(mblock = heap_head; mblock; mblock = mblock->next){
+		if(mblock->is_free){
 			continue;
 		}
 		printf("%-12d %-12zu %-22p %-22p %-20d %-12s\n",
-			mb->block_id,
-			mb->size,
-			(void*)((uintptr_t)mb + sizeof(mem_block)),
-			(void*)((uintptr_t)mb + sizeof(mem_block) + mb->size),
-			mb->file ? mb->line : -1,
-			mb->file ? mb->file : "unknown file"
+			mblock->block_id,
+			mblock->size,
+			(void*)((char*)mblock + sizeof(mem_block)),
+			(void*)((char*)mblock + sizeof(mem_block) + mblock->size),
+			mblock->file ? mblock->line : -1,
+			mblock->file ? mblock->file : "unknown file"
 			);
 	}
 	printf("\n");

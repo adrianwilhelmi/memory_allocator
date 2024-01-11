@@ -1,18 +1,123 @@
 #include<signal.h>
 #include<stdio.h>
+#include<stdbool.h>
 
 #include"mem_block.h"
 #include"allocator.h"
 
-unsigned int magic_number = 0x6164726E;
+unsigned int magic_number = MAGIC_NUMBER;
+unsigned int global_block_id = 0;
 
-int is_block_valid(mem_block*mb){
+mem_block*get_new_memory_block(size_t size){
+	//allocates size bytes of memory + memory for metadata by raising the program break with sbrk()
+	
+	alloc_stats.sbrk_calls += 1;
+	
+	//calculate total size
+	size_t total_size = size + sizeof(mem_block);
+	
+	mem_block*new_block = (mem_block*)sbrk(0);
+	//null if out of memory
+	if(sbrk((intptr_t)total_size) != new_block){
+		perror("out of memory");
+		return NULL;
+	}
+	
+	new_block->true_size = size;
+	new_block->size = size;
+	new_block->is_free = false;
+	new_block->next = NULL;
+	new_block->magic_number = magic_number;
+	new_block->block_id = global_block_id++;
+	
+	return new_block;
+}
+
+int is_block_valid(mem_block*mblock){
 	//ret 0 if block valid, -1 otherwise
 	
-	if(mb->magic_number != magic_number){
+	if(mblock->magic_number != magic_number){
 		return -1;
 	}
 	return 0;
+}
+
+mem_block*search_first_fit(size_t bytes, const char*file, int line){
+	//searches for first free block that has size of at least (bytes)
+	
+	mem_block*mblock;
+	if(heap_head != NULL){
+		for(mblock = heap_head; mblock; mblock = mblock->next){
+			if(is_block_valid(mblock) == -1){
+				invalid_block_message("magic number failure", "Raising seg fault...");
+				pthread_mutex_unlock(&allocator_mutex);
+				if(raise(SIGSEGV) != 0){
+					printf("err raising sigegv\n");
+				}
+				return NULL;
+			}
+			
+			if(mblock->is_free && mblock->size >= bytes){
+				mblock->file = file;
+				mblock->line = line;
+				
+				if((mblock->true_size > bytes + sizeof(mem_block) + sizeof(size_t))){
+					//enough memory to chop the block into 2 smaller blocks
+					if(split_block(mblock, bytes) == NULL){
+						printf("block too small to split\n");
+						return NULL;
+					}
+				}
+				else{
+					mblock->is_free = false;
+					mblock->size = bytes;
+				}
+
+				update_stats_add(bytes);
+								
+				return mblock + 1;
+			}
+		}
+	}
+	
+	return NULL;
+}
+
+mem_block*split_block(mem_block*mblock, size_t bytes){
+	//splits block into two smaller block of sizes bytes, size-bytes-sizeof(mem_block) respectively
+	
+	size_t new_block_size = mblock->size - bytes - sizeof(mem_block);
+	if(new_block_size < sizeof(size_t)){
+		return NULL;
+	}
+	
+	mblock->is_free = false;
+	mblock->size = bytes;
+	mblock->true_size = bytes;
+
+	bool is_tail = false;
+	if(mblock == heap_tail){
+		is_tail = true;
+	}
+					
+	mem_block*new_block = (mem_block*)((char*)(mblock + 1) + bytes);
+	new_block->is_free = true;
+	new_block->size = new_block_size;
+	new_block->true_size = new_block_size;
+	new_block->magic_number = magic_number;
+	new_block->block_id = global_block_id++;
+	new_block->file = mblock->file;
+	new_block->line = mblock->line;
+					
+	new_block->next = mblock->next;
+	if(is_tail){
+		heap_tail = new_block;
+	}
+					
+	mblock->next = new_block;
+	mblock->magic_number = magic_number;
+	
+	return mblock;
 }
 
 mem_block*merge_blocks(mem_block*mb1, mem_block*mb2){
@@ -61,16 +166,16 @@ void dump_full_memory_info(){
 	printf("%-12s %-12s %-22s %-22s %-20s %-12s %-12s", "block_id", "size", "start", "end", "line", "file", "is_free");
 	printf("\n");
 	
-	mem_block*mb;
-	for(mb = heap_head; mb; mb = mb->next){
+	mem_block*mblock;
+	for(mblock = heap_head; mblock; mblock = mblock->next){
 		printf("%-12d %-12zu %-22p %-22p %-20d %-12s %-12d\n",
-			mb->block_id,
-			mb->size,
-			(void*)((uintptr_t)mb + sizeof(mem_block)),
-			(void*)((uintptr_t)mb + sizeof(mem_block) + mb->size),
-			mb->file ? mb->line : -1,
-			mb->file ? mb->file : "unknown file",
-			mb->is_free
+			mblock->block_id,
+			mblock->size,
+			(void*)((char*)mblock + sizeof(mem_block)),
+			(void*)((char*)mblock + sizeof(mem_block) + mblock->size),
+			mblock->file ? mblock->line : -1,
+			mblock->file ? mblock->file : "unknown file",
+			mblock->is_free
 			);
 	}
 	printf("\n");
@@ -79,8 +184,8 @@ void dump_full_memory_info(){
 	printf("%-12d %-12zu %-22p %-22p %-20d %-12s\n",
 		heap_tail->block_id,
 		heap_tail->size,
-		(void*)((uintptr_t)heap_tail + sizeof(mem_block)),
-		(void*)((uintptr_t)heap_tail + sizeof(mem_block) + heap_tail->size),
+		(void*)((char*)heap_tail + sizeof(mem_block)),
+		(void*)((char*)heap_tail + sizeof(mem_block) + heap_tail->size),
 		heap_tail->file ? heap_tail->line : -1,
 		heap_tail->file ? heap_tail->file : "unknown file"
 		);

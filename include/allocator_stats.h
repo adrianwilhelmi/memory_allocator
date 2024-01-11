@@ -17,6 +17,7 @@ typedef struct allocator_stats{
 } allocator_stats;
 
 void report_stats();
+void update_stats_add();
 void clean_stats();
 
 #endif

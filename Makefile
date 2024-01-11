@@ -2,6 +2,7 @@ CFLAGS=-Wall -Wextra -pedantic -ggdb -ggdb3 -O3 -pthread
 LFLAGS=-Iinclude
 VALGRIND_FLAGS=--leak-check=full --show-leak-kinds=all --track-origins=yes --trace-children=yes --error-exitcode=1
 GCOV_FLAGS=-fprofile-arcs -ftest-coverage
+CLANG_TIDY_FLAGS=--quiet -checks=bugprone-*,-bugprone-easily-swappable-parameters,clang-analyzer-*,cert-*,concurrency-*,misc-*,modernize-*,performance-*,readability-* --warnings-as-errors=*
 
 all: clean compile_tests
 
@@ -15,25 +16,28 @@ run_scripted_tests:
 	@cd test/scripted && ./test_scripted.sh
 
 run_tests:
-	./tests
+	@./tests
 	@make run_scripted_tests
 	
 run_tests_valgrind:
-	valgrind $(VALGRIND_FLAGS) ./tests
+	@valgrind $(VALGRIND_FLAGS) ./tests
 
 run_gcov:
 	./tests
-	mv *.gcda src
-	mv *.gcno src
-	cd src && gcov tests-allocator.c
-	cd src && rm *.gcda
-	cd src && rm *.gcno
-	cd src && rm *.gcov
+	@mv *.gcda src
+	@mv *.gcno src
+	@cd src && gcov tests-allocator.c
+	@cd src && rm *.gcda
+	@cd src && rm *.gcno
+	@cd src && rm *.gcov
 
 test: compile_tests run_tests
 	
 gcov: compile_gcov run_gcov
-	rm gcov_tests
+	@rm gcov_tests
+	
+clangtidy:
+	clang-tidy $(CLANG_TIDY_FLAGS) --extra-arg=-Iinclude src/*.c --
 	
 regression:
 	make clean
@@ -44,7 +48,7 @@ regression:
 	make clean
 
 install:
-	scripts/install_lib.sh
+	@scripts/install_lib.sh
 
 clean:
-	rm -f allocator tests *.o *.gcda *.gcno
+	@rm -f allocator tests *.o *.gcda *.gcno

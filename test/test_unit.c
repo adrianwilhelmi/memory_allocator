@@ -155,7 +155,7 @@ void*thread_func(){
 	for(num_of_allocs = 0; num_of_allocs < max_num_of_allocs; num_of_allocs += incr){
 		void*ptrs[num_of_allocs];
 		for(int i = 0; i < num_of_allocs; ++i){
-			ptrs[i] = alloc(i*sizeof(size_t));
+			ptrs[i] = alloc((i+1)*sizeof(size_t));
 		}
 		
 		for(int i = 0; i < num_of_allocs; ++i){

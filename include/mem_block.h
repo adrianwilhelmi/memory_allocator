@@ -4,7 +4,10 @@
 #include<stddef.h>
 #include<stdbool.h>
 
+#define MAGIC_NUMBER 0x6164726E
+
 extern unsigned int magic_number;
+extern unsigned int global_block_id;
 
 typedef struct mem_block{
 	struct mem_block*next;
@@ -17,7 +20,10 @@ typedef struct mem_block{
 	bool is_free;
 } mem_block;
 
+mem_block*get_new_memory_block(size_t size);
 int is_block_valid(mem_block*mb);
+mem_block*search_first_fit(size_t bytes, const char*file, int line);
+mem_block*split_block(mem_block*mblock, size_t bytes);
 mem_block*merge_blocks(mem_block*mb1, mem_block*mb2);
 void invalid_block_message(char*cause, char*consequence);
 void dump_full_memory_info();
