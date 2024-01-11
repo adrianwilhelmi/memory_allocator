@@ -4,6 +4,7 @@ VALGRIND_FLAGS=--leak-check=full --show-leak-kinds=all --track-origins=yes --tra
 GCOV_FLAGS=-fprofile-arcs -ftest-coverage
 CLANG_TIDY_FLAGS=--quiet -checks=bugprone-*,-bugprone-easily-swappable-parameters,clang-analyzer-*,cert-*,concurrency-*,misc-*,modernize-*,performance-*,readability-* --warnings-as-errors=*
 SCANBUILD_FLAGS=--status-bugs --keep-cc --show-description
+XANALYZER_FLAGS=--analyze -Xanalyzer -analyzer-output=text
 
 all: clean compile_tests
 
@@ -13,7 +14,44 @@ compile_tests: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c
 compile_gcov: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
 	$(CC) $(CFLAGS) $(GCOV_FLAGS) $(LFLAGS) -o tests test/test.c test/test_unit.c src/allocator.c src/allocator_stats.c src/mem_block.c
 
-full_analyze_compile:
+compile_xanalyzer: src/allocator.c src/allocator_stats.c src/mem_block.c
+	clang $(XANALYZER_FLAGS) $(LFLAGS) src/allocator.c
+	clang $(XANALYZER_FLAGS) $(LFLAGS) src/allocator_stats.c
+	clang $(XANALYZER_FLAGS) $(LFLAGS) src/mem_block.c
+	
+compile_sanitizer: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
+	clang -fsanitize=address $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
+	./a.out
+	rm a.out
+	
+	clang -fsanitize=thread $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
+	./a.out
+	rm a.out
+	
+	clang -fsanitize=memory $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
+	./a.out
+	rm a.out
+	
+	clang -fsanitize=undefined $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
+	./a.out
+	rm a.out
+	
+	clang -fsanitize=dataflow $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
+	./a.out
+	rm a.out
+	
+	clang -flto -fsanitize=cfi -fvisibility=default $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
+	./a.out
+	rm a.out
+	
+	clang -fsanitize=safe-stack $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
+	./a.out
+	rm a.out
+	
+	
+compile_full_analyze:
+	make compile_xanalyzer
+	make clean
 	scan-build $(SCANBUILD_FLAGS) make compile_gcov
 
 run_scripted_tests:
@@ -46,7 +84,7 @@ clangtidy:
 	
 regression:
 	make clean
-	make full_analyze_compile
+	make compile_full_analyze
 	make run_tests_valgrind
 	make run_scripted_tests
 	make check_gcov
@@ -56,4 +94,4 @@ install:
 	@scripts/install_lib.sh
 
 clean:
-	@rm -f allocator tests *.o *.gcda *.gcno
+	@rm -f allocator tests *.o *.gcda *.gcno a.out
