@@ -16,6 +16,8 @@ typedef struct allocator_stats{
 	int sbrk_calls;
 } allocator_stats;
 
+extern allocator_stats alloc_stats;
+
 void report_stats();
 void update_stats_add();
 void clean_stats();

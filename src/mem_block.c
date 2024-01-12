@@ -7,6 +7,8 @@
 
 unsigned int magic_number = MAGIC_NUMBER;
 unsigned int global_block_id = 0;
+mem_block*heap_head = NULL;
+mem_block*heap_tail = NULL;
 
 mem_block*get_new_memory_block(size_t size){
 	//allocates size bytes of memory + memory for metadata by raising the program break with sbrk()
@@ -42,18 +44,14 @@ int is_block_valid(mem_block*mblock){
 	return 0;
 }
 
-mem_block*search_first_fit(size_t bytes, const char*file, int line){
+mem_block*search_first_fit(size_t bytes, const char*file, int line, error_code*err_code){
 	//searches for first free block that has size of at least (bytes)
 	
 	mem_block*mblock;
 	if(heap_head != NULL){
 		for(mblock = heap_head; mblock; mblock = mblock->next){
 			if(is_block_valid(mblock) == -1){
-				invalid_block_message("magic number failure", "Raising seg fault...");
-				pthread_mutex_unlock(&allocator_mutex);
-				if(raise(SIGSEGV) != 0){
-					printf("err raising sigegv\n");
-				}
+				*err_code = INVALID_BLOCK;
 				return NULL;
 			}
 			
@@ -75,7 +73,7 @@ mem_block*search_first_fit(size_t bytes, const char*file, int line){
 
 				update_stats_add(bytes);
 								
-				return mblock + 1;
+				return mblock;
 			}
 		}
 	}
@@ -151,45 +149,4 @@ void invalid_block_message(char*cause, char*consequence){
 	}
 	
 	printf("UNVALID BLOCK: %s. %s\n", cause, consequence);
-}
-
-void dump_full_memory_info(){
-	//prints information about every memory block
-	
-	pthread_mutex_lock(&allocator_mutex);
-	if(heap_head == NULL){
-		printf("no memory allocated\n");
-		pthread_mutex_unlock(&allocator_mutex);
-		return;
-	}
-	
-	printf("%-12s %-12s %-22s %-22s %-20s %-12s %-12s", "block_id", "size", "start", "end", "line", "file", "is_free");
-	printf("\n");
-	
-	mem_block*mblock;
-	for(mblock = heap_head; mblock; mblock = mblock->next){
-		printf("%-12d %-12zu %-22p %-22p %-20d %-12s %-12d\n",
-			mblock->block_id,
-			mblock->size,
-			(void*)((char*)mblock + sizeof(mem_block)),
-			(void*)((char*)mblock + sizeof(mem_block) + mblock->size),
-			mblock->file ? mblock->line : -1,
-			mblock->file ? mblock->file : "unknown file",
-			mblock->is_free
-			);
-	}
-	printf("\n");
-	
-	printf("heap tail:\n");	
-	printf("%-12d %-12zu %-22p %-22p %-20d %-12s\n",
-		heap_tail->block_id,
-		heap_tail->size,
-		(void*)((char*)heap_tail + sizeof(mem_block)),
-		(void*)((char*)heap_tail + sizeof(mem_block) + heap_tail->size),
-		heap_tail->file ? heap_tail->line : -1,
-		heap_tail->file ? heap_tail->file : "unknown file"
-		);
-	printf("\n");
-
-	pthread_mutex_unlock(&allocator_mutex);
 }

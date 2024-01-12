@@ -18,41 +18,35 @@ compile_xanalyzer: src/allocator.c src/allocator_stats.c src/mem_block.c
 	clang $(XANALYZER_FLAGS) $(LFLAGS) src/allocator.c
 	clang $(XANALYZER_FLAGS) $(LFLAGS) src/allocator_stats.c
 	clang $(XANALYZER_FLAGS) $(LFLAGS) src/mem_block.c
-	make clean
+	@make clean
 	
 compile_sanitizer: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
 	clang -fsanitize=address $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
-	./a.out
-	rm a.out
+	@./a.out
 	
 	clang -fsanitize=thread $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
-	./a.out
-	rm a.out
+	@./a.out
 	
 	clang -fsanitize=memory $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
-	./a.out
-	rm a.out
+	@./a.out
 	
 	clang -fsanitize=undefined $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
-	./a.out
-	rm a.out
+	@./a.out
 	
 	clang -fsanitize=dataflow $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
-	./a.out
-	rm a.out
+	@./a.out
 	
 	clang -flto -fsanitize=cfi -fvisibility=default $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
-	./a.out
-	rm a.out
+	@./a.out
 	
 	clang -fsanitize=safe-stack $(LFLAGS) src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
-	./a.out
-	make clean
+	@./a.out
+	@make clean
 	
 compile_full_analyze:
-	make compile_xanalyzer
-	make compile_sanitizer
-	scan-build $(SCANBUILD_FLAGS) make compile_gcov
+	@make compile_xanalyzer
+	@make compile_sanitizer
+	@scan-build $(SCANBUILD_FLAGS) make compile_gcov
 
 run_scripted_tests:
 	@cd test/scripted && ./test_scripted.sh
@@ -70,27 +64,28 @@ check_gcov:
 	@cd src && gcov tests-allocator.c
 	@cd src && gcov tests-mem_block.c
 	@cd src && gcov tests-allocator_stats.c
-	@cd src && rm *.gcda
-	@cd src && rm *.gcno
-	@cd src && rm *.gcov
+	@cd src && rm *.gcda *.gcno *.gcov
 
 test: compile_tests run_tests
 	
-gcov: compile_gcov run_gcov
+gcov: compile_gcov run_tests check_gcov
 	@rm gcov_tests
 	
 clangtidy:
-	clang-tidy $(CLANG_TIDY_FLAGS) --extra-arg=-Iinclude src/*.c --
+	@clang-tidy $(CLANG_TIDY_FLAGS) --extra-arg=-Iinclude src/*.c --
 	
 regression:
-	make clean
-	make compile_full_analyze
-	make run_tests_valgrind
-	make run_scripted_tests
-	make check_gcov
-	make clean
+	@make clean
+	@make compile_full_analyze
+	@make run_tests_valgrind
+	@make run_scripted_tests
+	@make check_gcov
+	@make clean
 
 install:
+	@chmod +x scripts/install_env.sh
+	@chmod +x scripts/install_lib.sh
+	@scripts/install_env.sh
 	@scripts/install_lib.sh
 
 clean:

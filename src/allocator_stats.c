@@ -3,6 +3,8 @@
 #include"allocator_stats.h"
 #include"allocator.h"
 
+allocator_stats alloc_stats;
+
 void report_stats(){
 	if(heap_head == NULL){
 		return;

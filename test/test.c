@@ -289,8 +289,6 @@ void test_e2e_seg(){
 }
 
 int main(){
-	initialize_allocator();
-	
 	run_unit_tests();
 	
 	test_e2e_no_seg();

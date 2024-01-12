@@ -7,13 +7,11 @@
 #include"allocator_stats.h"
 #include"allocator.h"
 
-mem_block*heap_head = NULL;
-mem_block*heap_tail = NULL;
-bool was_initialized = 0;
-pthread_mutex_t allocator_mutex;
-allocator_stats alloc_stats;
+static bool was_initialized = 0;
+static pthread_mutex_t allocator_mutex;
+static error_code err_code;
 
-void initialize_allocator(){
+static void initialize_allocator(){
 	//initializes the mutex and sets up free_all as function to be called at exit
 	//if no gnuc then allocator will be initalized with first allocation
 	
@@ -32,8 +30,8 @@ void initialize_allocator(){
 		return;
 	}
 	
+	err_code = NO_ERR;
 	was_initialized = 1;
-	printf("allocator initialized\n");
 }
 
 static size_t align(size_t size){
@@ -61,14 +59,21 @@ void*allocate(size_t bytes, const char*file, int line){
 	bytes = align(bytes);
 	
 	//search for free memory in previously allocated blocks
-	void*addr = search_first_fit(bytes, file, line);
-	if(addr != NULL){
+	mem_block*mblock = search_first_fit(bytes, file, line, &err_code);
+	if(mblock != NULL){
 		pthread_mutex_unlock(&allocator_mutex);
-		return addr;
+		if(err_code == INVALID_BLOCK){
+			invalid_block_message("magic number failure", "Raising seg fault...");
+			if(raise(SIGSEGV) != 0){
+				printf("err raising sigegv\n");
+			}
+			return NULL;
+		}
+		return mblock + 1;
 	}
 	
 	//get new memory block if no available memory found
-	mem_block*new_block = get_new_memory_block(bytes);
+	mblock = get_new_memory_block(bytes);
 	
 	//initialize global vars if its first allocated block
 	if(heap_head == NULL){
@@ -78,23 +83,23 @@ void*allocate(size_t bytes, const char*file, int line){
 				return NULL;
 			}
 		}
-		heap_head = new_block;
-		heap_tail = new_block;
+		heap_head = mblock;
+		heap_tail = mblock;
 	}
 	else{
-		heap_tail->next = new_block;
+		heap_tail->next = mblock;
 		heap_tail = heap_tail->next;
 		heap_tail->next = NULL;
 	}
 
-	new_block->file = file;
-	new_block->line = line;
+	mblock->file = file;
+	mblock->line = line;
 	
 	update_stats_add(bytes);
 	
 	pthread_mutex_unlock(&allocator_mutex);
 	
-	return new_block + 1;
+	return mblock + 1;
 }
 
 void my_free(void*addr){
