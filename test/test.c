@@ -6,7 +6,10 @@
 #include<stdlib.h>
 #include<fcntl.h>
 #include<signal.h>
+#include<unistd.h>
 
+#include"mem_block.h"
+#include"allocator_stats.h"
 #include"allocator.h"
 #include"test.h"
 

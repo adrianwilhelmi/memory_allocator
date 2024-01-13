@@ -2,6 +2,9 @@
 #include<stdio.h>
 #include<stdbool.h>
 #include<signal.h>
+#include<pthread.h>
+#include<stdint.h>
+#include<unistd.h>
 
 #include"mem_block.h"
 #include"allocator_stats.h"

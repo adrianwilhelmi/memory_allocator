@@ -1,9 +1,12 @@
 #include<stdio.h>
 #include<string.h>
 #include<assert.h>
+#include<pthread.h>
 
 #include"test.h"
 #include"allocator.h"
+#include"mem_block.h"
+#include"allocator_stats.h"
 
 void test_align(){
 	b3*blck3 = alloc(sizeof(b3));

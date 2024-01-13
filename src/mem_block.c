@@ -1,9 +1,12 @@
 #include<signal.h>
 #include<stdio.h>
 #include<stdbool.h>
+#include<stdint.h>
+#include<unistd.h>
 
 #include"mem_block.h"
 #include"allocator.h"
+#include"allocator_stats.h"
 
 unsigned int magic_number = MAGIC_NUMBER;
 unsigned int global_block_id = 0;

@@ -2,6 +2,7 @@
 
 #include"allocator_stats.h"
 #include"allocator.h"
+#include"mem_block.h"
 
 allocator_stats alloc_stats;
 

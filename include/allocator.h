@@ -2,13 +2,6 @@
 #define  __ALLOCATOR_H__
 
 #include<stddef.h>
-#include<stdbool.h>
-#include<unistd.h>
-#include<pthread.h>
-#include<stdint.h>
-
-#include"mem_block.h"
-#include"allocator_stats.h"
 
 #define alloc(bytes) allocate(bytes, __FILE__, __LINE__)
 #define free(addr) my_free(addr)

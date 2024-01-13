@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo ""
 echo "please enter the installation path"
 read installation_path
 
@@ -12,10 +13,15 @@ echo "copying header file"
 sudo cp include/allocator.h $header_path
 
 echo "compiling and creating lib..."
+gcc -Iinclude -c -o allocator_stats.o src/allocator_stats.c
+gcc -Iinclude -c -o mem_block.o src/mem_block.c
 gcc -Iinclude -c -o allocator.o src/allocator.c
-ar rcs liballocator.a allocator.o
+
+ar rcs liballocator.a allocator.o allocator_stats.o mem_block.o
+
 sudo cp liballocator.a "$lib_path"
-rm allocator.o
+
+rm allocator.o allocator_stats.o mem_block.o
 rm liballocator.a
 
 echo "lib installed successfully to $installation_path"
