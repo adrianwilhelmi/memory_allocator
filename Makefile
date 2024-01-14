@@ -6,7 +6,10 @@ CLANG_TIDY_FLAGS=--quiet -checks=bugprone-*,-bugprone-easily-swappable-parameter
 SCANBUILD_FLAGS=--status-bugs --keep-cc --show-description
 XANALYZER_FLAGS=--analyze -Xanalyzer -analyzer-output=text
 
-all: clean compile_tests
+all: compile_tests example
+
+example: example/example.c
+	gcc example/example.c -Iexample/include -Lexample/lib -lallocator -o example_out
 
 compile_tests: src/allocator.c src/allocator_stats.c src/mem_block.c test/test.c test/test_unit.c
 	$(CC) $(CFLAGS) $(LFLAGS) -o tests test/test.c src/allocator.c src/allocator_stats.c src/mem_block.c test/test_unit.c
@@ -73,7 +76,7 @@ gcov: compile_gcov run_tests check_gcov
 	
 clangtidy:
 	@clang-tidy $(CLANG_TIDY_FLAGS) --extra-arg=-Iinclude src/*.c --
-	
+
 regression:
 	@make clean
 	@make compile_full_analyze
@@ -82,11 +85,13 @@ regression:
 	@make check_gcov
 	@make clean
 
-install:
+install_env:
 	@chmod +x scripts/install_env.sh
-	@chmod +x scripts/install_lib.sh
 	@scripts/install_env.sh
+
+install:
+	@chmod +x scripts/install_lib.sh
 	@scripts/install_lib.sh
 
 clean:
-	@rm -f allocator tests *.o *.gcda *.gcno a.out
+	@rm -f allocator tests *.o *.gcda *.gcno a.out example_out

@@ -32,7 +32,17 @@ if ! sudo $PKG_UPDATE; then
 	exit 1
 fi
 
-if ! sudo $PKG_INSTALL build-essential; then
+if ! sudo $PKG_INSTALL make; then
+	echo "installation failed"
+	exit 1
+fi
+
+if ! sudo $PKG_INSTALL gcc; then
+	echo "installation failed"
+	exit 1
+fi
+
+if ! sudo $PKG_INSTALL binutils; then
 	echo "installation failed"
 	exit 1
 fi

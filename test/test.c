@@ -40,7 +40,8 @@ void run_unit_tests(){
 	for(int i = 0; i < number_of_tests; ++i){
 		printf("%d ", i+1);
 		tests[i]();
-		free_all();
+//		free_all();
+		heap_head = NULL;
 		clean_stats(&alloc_stats);
 	}
 	printf("UNIT TESTS Ok.\n");
@@ -198,7 +199,8 @@ void test_e2e_no_seg(){
 		);
 		
 	report_stats();
-	free_all();
+//	free_all();
+	heap_head = NULL;
 	clean_stats(&alloc_stats);
 	
 	close(fd_out);

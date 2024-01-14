@@ -14,6 +14,8 @@ static bool was_initialized = 0;
 static pthread_mutex_t allocator_mutex;
 static error_code err_code;
 
+void free_all();
+
 static void initialize_allocator(){
 	//initializes the mutex and sets up free_all as function to be called at exit
 	//if no gnuc then allocator will be initalized with first allocation
@@ -24,11 +26,11 @@ static void initialize_allocator(){
 	}
 	
 	//first report stats about unfreed blocks and then free them
-	if(atexit(free_all) != 0){
+/*	if(atexit(free_all) != 0){
 		perror("couldnt register function at exit\n");
 		return;
 	}
-	if(atexit(report_stats) != 0){
+*/	if(atexit(report_stats) != 0){
 		perror("couldnt register function at exit\n");
 		return;
 	}
