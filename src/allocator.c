@@ -16,23 +16,15 @@ static bool was_initialized = 0;
 static pthread_mutex_t allocator_mutex;
 static error_code err_code;
 
-void free_all();
-
 static void initialize_allocator(){
-	//initializes the mutex and sets up free_all as function to be called at exit
-	//if no gnuc then allocator will be initalized with first allocation
+	//initializes the mutex and reporting stats at the end of the program
 	
 	if(pthread_mutex_init(&allocator_mutex, NULL) != 0){
 		perror("err initializing mutex");
 		return;
 	}
 	
-	//first report stats about unfreed blocks and then free them
-/*	if(atexit(free_all) != 0){
-		perror("couldnt register function at exit\n");
-		return;
-	}
-*/	if(atexit(report_stats) != 0){
+	if(atexit(report_stats) != 0){
 		perror("couldnt register function at exit\n");
 		return;
 	}
@@ -68,15 +60,16 @@ void*allocate(size_t bytes, const char*file, int line){
 	//search for free memory in previously allocated blocks
 	mem_block*mblock = search_first_fit(bytes, file, line, &err_code);
 	if(mblock != NULL){
-		pthread_mutex_unlock(&allocator_mutex);
 		if(err_code == INVALID_BLOCK){
 			invalid_block_message("magic number failure", "Raising seg fault...");
+			pthread_mutex_unlock(&allocator_mutex);
 			if(raise(SIGSEGV) != 0){
 				printf("err raising sigegv\n");
 			}
 			return NULL;
 		}
-		return mblock + 1;
+		pthread_mutex_unlock(&allocator_mutex);
+		return (char*)mblock + sizeof(mem_block);
 	}
 	
 	//get new memory block if no available memory found
@@ -106,7 +99,7 @@ void*allocate(size_t bytes, const char*file, int line){
 	
 	pthread_mutex_unlock(&allocator_mutex);
 	
-	return mblock + 1;
+	return (char*)mblock + sizeof(mem_block);
 }
 
 void my_free(void*addr){
@@ -122,7 +115,7 @@ void my_free(void*addr){
 		return;
 	}
 	
-	mem_block*to_free = (mem_block*)addr - 1;
+	mem_block*to_free = (mem_block*)((char*)addr - sizeof(mem_block));
 	
 	//check if addr is a valid address (allocated by this allocator)
 	mem_block*mblock;

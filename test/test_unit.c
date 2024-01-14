@@ -104,19 +104,21 @@ static void*couple_of_allocations(){
 	return NULL;
 }
 
-void test_multithread(){	
-	int num_of_threads = 5;
-	pthread_t threads[num_of_threads];
-	
-	for(int i = 0; i < num_of_threads; ++i){
-		int result = pthread_create(&threads[i], NULL, couple_of_allocations, NULL);
-		assert(result == 0);
+void test_multithread(){
+	for(int k = 0; k < 100; ++k){
+		int num_of_threads = 5;
+		pthread_t threads[num_of_threads];
+		
+		for(int i = 0; i < num_of_threads; ++i){
+			int result = pthread_create(&threads[i], NULL, couple_of_allocations, NULL);
+			assert(result == 0);
+		}
+		for(int i = 0; i < num_of_threads; ++i){
+			int result = pthread_join(threads[i], NULL);
+			assert(result == 0);
+		}
+		printf("iteration: %d\n", k);
 	}
-	for(int i = 0; i < num_of_threads; ++i){
-		int result = pthread_join(threads[i], NULL);
-		assert(result == 0);
-	}
-	
 	printf("multithreading ok\n");
 }
 
