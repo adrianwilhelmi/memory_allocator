@@ -42,4 +42,4 @@ Here's an example of how I installed, compileed and useed the allocator:
 - Created `example.c` in `example` directory and wrote a simple program using the allocator
 - Compiled it with `gcc example/example.c -Iexample/include -Lexample/lib -lallocator -o example_out`
 
-  Check the example/example.c file to see how to use functions from the library in actual code.
+Check the example/example.c file to see how to use functions from the library in actual code.
