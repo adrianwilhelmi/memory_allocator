@@ -52,6 +52,7 @@ compile_full_analyze:
 	@scan-build $(SCANBUILD_FLAGS) make compile_gcov
 
 run_scripted_tests:
+	@cd test/scripted && chmod +x *.sh
 	@cd test/scripted && ./test_scripted.sh
 
 run_tests:

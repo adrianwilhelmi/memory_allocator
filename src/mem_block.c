@@ -1,3 +1,5 @@
+//Author: Adrian Wilhelmi
+
 #include<signal.h>
 #include<stdio.h>
 #include<stdbool.h>

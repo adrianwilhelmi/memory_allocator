@@ -1,3 +1,5 @@
+//Author: Adrian Wilhelmi
+
 #ifndef __ALLOCATOR_STATS_H__
 #define __ALLOCATOR_STATS_H__
 

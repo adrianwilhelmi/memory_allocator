@@ -1,12 +1,12 @@
 # Memory Allocator
 ## Overview
 
-Simple memory allocator that allocates memory using the `sbrk` system call and a simple first-fit algorithm (I will probably expand this to use mmap and other algorithms too).
+This is a simple memory allocator that allocates memory using the sbrk system call and employs a straightforward first-fit algorithm (I may expand it to include mmap and other algorithms in the future).
 
 ## Functionalities
 
-* Provides `void alloc(size_t bytes)` and `void free(void* addr)` functions, which work similarly to the classic `malloc()` and `free()`.
-* Allows checking information about allocated memory at any time while the program is running.
+* Provides `void*alloc(size_t bytes)` and `void free(void*addr)` functions, which work similarly to the classic `malloc()` and `free()`.
+* Allows checking information about allocated memory at any time while the program is running using `dump_memory_info()`.
 * Collects the following statistics:
   + Total allocated memory in bytes.
   + Number of `alloc()` calls.
@@ -26,15 +26,20 @@ Simple memory allocator that allocates memory using the `sbrk` system call and a
 * make
 * binutils
 
-Executing `scripts/install_env.sh` script will detect your Linux distribution and install required software. You can run `make install_env` if you have at least make installed on your computer.
+Executing `scripts/install_env.sh` script will detect your Linux distribution and install required software. You can run `make install_env` if you have at least make installed on your computer. To run tests and all analyzers you will also need `valgrind`, `clang`, `clang-tidy`, `clang-tools` and `gcovr`, but they are not essential for the library so i didn't include them in the installation script.
 
 ## Installation, compilation and usage
 
-To build and install the library to a desired directory with desired compier enter ``` make install P=/path/to/allocator CC=<c_compiler>```. Running `make install` by itself will execute the installation script, which will prompt you to enter the desired path where the allocator library should be installed and will use gcc as default compiler. Program using the allocator should be compiled with `-I/path/to/allocator/include -L/path/to/allocator/lib -lallocator` flags. You also need to add `#include"allocator.h"` line to your C program using the allocator.
+To build and install the library to a desired directory with a preferred compiler use the command: ``` make install P=/path/to/allocator CC=<c_compiler>```. Running `make install` by itself will execute the installation script, which will prompt you to enter the desired path where the allocator library should be installed and will use gcc as the default compiler. Programs using the allocator should be compiled with `-I/path/to/allocator/include -L/path/to/allocator/lib -lallocator` flags. Additionally, don't forget to include `#include"allocator.h"` in your C program using the allocator. To run tests with analyzers, use the command `make regression`.
 
 ### Example
-- I downloaded this repository to /home/$user/Documents/work/allocator/
+
+Here's an example of how I installed, compileed and useed the allocator:
+
+- I Downloaded this repository to /home/$user/Documents/work/allocator/
 - Ran `make isntall_env`
 - Ran `make install P=/home/$USER/Documents/work/allocator/example CC=gcc` (it doesn't have to be installed in the same directory as the repository)
-- Cretaed `example.c` in `example` directory and wrote a simple program using the allocator
-- Compiled it with `gcc example/example.c -Iexample/include -Lexample/lib -o example_out`
+- Created `example.c` in `example` directory and wrote a simple program using the allocator
+- Compiled it with `gcc example/example.c -Iexample/include -Lexample/lib -lallocator -o example_out`
+
+  Check the example/example.c file to see how to use functions from the library in actual code.

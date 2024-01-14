@@ -1,3 +1,5 @@
+//Author: Adrian Wilhelmi
+
 #ifndef __MEM_BLOCK_H__
 #define __MEM_BLOCK_H__
 

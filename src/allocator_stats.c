@@ -1,3 +1,5 @@
+//Author: Adrian Wilhelmi
+
 #include<stdio.h>
 
 #include"allocator_stats.h"
