@@ -34,7 +34,7 @@ To build and install the library to a desired directory with a preferred compile
 
 ### Example
 
-Here's an example of how I installed, compileed and useed the allocator:
+Here's an example of how I installed, compiled and used the allocator:
 
 - I Downloaded this repository to /home/$user/Documents/work/allocator/
 - Ran `make isntall_env`
