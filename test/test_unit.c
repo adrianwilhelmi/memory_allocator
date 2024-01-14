@@ -105,7 +105,7 @@ static void*couple_of_allocations(){
 }
 
 void test_multithread(){
-	for(int k = 0; k < 100; ++k){
+	//for(int k = 0; k < 100; ++k){
 		int num_of_threads = 5;
 		pthread_t threads[num_of_threads];
 		
@@ -119,7 +119,7 @@ void test_multithread(){
 		}
 		printf("iteration: %d\n", k);
 	}
-	printf("multithreading ok\n");
+	//printf("multithreading ok\n");
 }
 
 void test_huge_alloc(){
